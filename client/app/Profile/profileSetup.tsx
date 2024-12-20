@@ -60,10 +60,10 @@ const ProfileSetup: React.FC = () => {
   }, []);
 
  
-  const uploadImage = async () => {
+  const uploadImage = async (): Promise<string | null> => {
     if (!profileImage) {
       alert('Please select an image first!');
-      return;
+      return null;
     }
   
     try {
@@ -78,13 +78,13 @@ const ProfileSetup: React.FC = () => {
       console.log(fileName);
   
       // The correct Supabase storage URL for uploading the image to the 'profile-images' bucket
-      const uploadUrl = `https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/profile-images/${fileName}`;
+      const uploadUrl = `https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/profile-images/public/${fileName}`;
   
       // Perform the upload request
       const uploadResponse = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, // Ensure the correct API key
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`, // Ensure the correct API key
           'Content-Type': 'image/jpeg', // Set the content type of the uploaded image
         },
         body: blob,
@@ -93,22 +93,26 @@ const ProfileSetup: React.FC = () => {
       // Check if the upload was successful
       if (uploadResponse.ok) {
         setUploadStatus('Image uploaded successfully!');
-        // https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/profile-images/public/1734719488569_profile_image.jpg
+  
         // Construct the public URL for the uploaded image
-        const publicUrl = `https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/profile-images/public/${fileName}`;
-        setPublicImageUrl(publicUrl); // Store the public URL
-        console.log('Public URL:', publicImageUrl );
+        const publicUrl = `https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/profile-images/${fileName}`;
+        console.log('Public URL:', publicUrl);
+        return publicUrl;
       } else {
         setUploadStatus('Failed to upload image');
         console.error('Upload error', uploadResponse.status);
+        return null;
       }
     } catch (error) {
       setUploadStatus('Network error during upload');
       console.error('Upload error:', error);
+      return null;
     } finally {
       setUploading(false);
     }
   };
+  
+  
   
   const handleProfileSubmit = async () => {
     if (!name || !contactEmail || !roleId) {
@@ -117,10 +121,12 @@ const ProfileSetup: React.FC = () => {
     }
   
     try {
-      // Always upload the image if a new one is selected
-      if (profileImage) {
-        // Make sure the image gets uploaded and we get the correct public URL
-        await uploadImage();
+      // Upload the image and get the public URL
+      const uploadedImageUrl = await uploadImage();
+  
+      if (!uploadedImageUrl) {
+        Alert.alert('Error', 'Image upload failed. Please try again.');
+        return;
       }
   
       const { data, error } = await supabase.auth.getUser();
@@ -133,9 +139,6 @@ const ProfileSetup: React.FC = () => {
         throw new Error('User not authenticated');
       }
   
-      // Use the updated public image URL (make sure publicImageUrl is set)
-       // If the image URL is not set, use the URI
-  
       // Insert or update the user profile details in the 'users' table
       const { error: dbError } = await supabase
         .from('users')
@@ -144,7 +147,7 @@ const ProfileSetup: React.FC = () => {
           name,
           contact_email: contactEmail,
           role_id: roleId,
-          profile_image: publicImageUrl, // Use the latest image URL
+          profile_image: uploadedImageUrl, // Use the returned public URL
         });
   
       if (dbError) throw dbError;
@@ -155,6 +158,7 @@ const ProfileSetup: React.FC = () => {
       Alert.alert('Error', error.message);
     }
   };
+  
   
   
 

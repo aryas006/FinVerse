@@ -5,7 +5,7 @@ import { Link } from 'expo-router';
 const Index = () => {
     return (
         <View style={styles.container}>
-            <Link href="/Components/posts" style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            <Link href="/discover" style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
             </Link>
             

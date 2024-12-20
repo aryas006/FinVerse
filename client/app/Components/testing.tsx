@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Icon } from 'react-native-elements';
 
+
 const MyComponent = () => {
   const [isHeartFilled, setIsHeartFilled] = useState(false);
 

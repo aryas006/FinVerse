@@ -1,12 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 import React from 'react';
+import { Link } from 'expo-router';
 
 const Index = () => {
     return (
         <View style={styles.container}>
-            <Text style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            <Link href="/Components/posts" style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
-            </Text>
+            </Link>
+            
         </View>
     );
 }

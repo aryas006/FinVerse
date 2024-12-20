@@ -1,46 +1,58 @@
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { Icon } from 'react-native-elements';
 
-const PostItem = () => {
-   const [isHeartFilled, setIsHeartFilled] = useState(false);
+type PostItemProps = {
+  profileImage: string;
+  userName: string;
+  content: string;
+  postImage: string | null;
+  createdAt: string;
+  likes: number;
+  comments: number;
+};
+
+const PostItem: React.FC<PostItemProps> = ({
+  profileImage,
+  userName,
+  content,
+  postImage,
+  createdAt,
+  likes,
+  comments,
+}) => {
+  const [isHeartFilled, setIsHeartFilled] = useState(false);
 
   const handleHeartPress = () => {
     setIsHeartFilled(!isHeartFilled);
-  };  
+  };
 
   return (
     <View style={styles.postContainer}>
-      {/* Header - Profile Image and User Info */}
       <View style={styles.header}>
         <Image
-          source={require('../../assets/images/prof.png')}  // Static profile image
+          source={{ uri: profileImage }}
           style={styles.profileImage}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>John Doe</Text>
-          <Text style={styles.timeAgo}>2 hours ago</Text>
+          <Text style={styles.userName}>{userName || 'Anonymous'}</Text>
+          <Text style={styles.timeAgo}>{new Date(createdAt).toLocaleString()}</Text>
         </View>
       </View>
 
-      {/* Post Content */}
-      <Text style={styles.content}>
-        This is a sample post! It can contain text, links, or images.
-      </Text>
-      <Image
-        source={require('../../assets/images/post.png')} // Static content image
-        style={styles.postImage}
-      />
+      <Text style={styles.content}>{content}</Text>
+      {postImage && <Image source={{ uri: postImage }} style={styles.postImage} />}
+      
+        
 
-      {/* Footer - Engagement Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.iconButton}>
           <Icon name="comment-text-outline" type="material-community" color="gray" size={24} />
-          <Text style={styles.iconText}>5</Text>
+          <Text style={styles.iconText}>{comments}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={handleHeartPress}>
           <Icon name={isHeartFilled ? 'heart' : 'heart-outline'} type="material-community" color={isHeartFilled ? 'red' : 'gray'} size={24} />
-          <Text style={styles.iconText}>23</Text>
+          <Text style={styles.iconText}>{likes}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
           <Icon name="share-variant" type="material-community" color="gray" size={24} />
@@ -50,7 +62,6 @@ const PostItem = () => {
         </TouchableOpacity>
       </View>
     </View>
-    
   );
 };
 
@@ -59,12 +70,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     marginBottom: 20,
-    marginTop : 10,
+    marginTop: 10,
     padding: 15,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 10,
-    elevation: 5, // Adds shadow for Android
+    elevation: 5,
   },
   header: {
     flexDirection: 'row',
@@ -74,7 +85,7 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 40,
     height: 40,
-    borderRadius: 20, // Circular profile image
+    borderRadius: 20,
     marginRight: 10,
   },
   userInfo: {

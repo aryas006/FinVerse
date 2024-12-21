@@ -6,7 +6,7 @@ import BottomNav from './Components/BottomNav';
 const Index = () => {
     return (
         <View style={styles.container}>
-            <Link href="/discover" style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            <Link href="/Components/addStartUp" style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
             </Link>
 

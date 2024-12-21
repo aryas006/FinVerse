@@ -31,7 +31,7 @@ const Login = ({ navigation }: any) => {
 
         Alert.alert('Login Successful', 'You are now logged in.');
         
-        router.push('/Profile/profileSetup'); // Navigate to the profile setup screen
+        router.push('/Feed/testing'); // Navigate to the profile setup screen
       } else {
         throw new Error('Session not found');
       }

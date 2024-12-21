@@ -6,10 +6,11 @@ import PostItem from '../Components/posts';
 import BottomNav from '../Components/BottomNav';
 import { Divider } from 'react-native-elements/dist/divider/Divider';
 
-
 const FeedPage = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const defaultProfileImageUrl = 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png';
 
   const fetchPosts = async () => {
     try {
@@ -20,10 +21,28 @@ const FeedPage = () => {
 
       if (error) throw error;
 
-      setPosts(data);
+      // Fetch profile image for each post based on user_id
+      const postsWithImages = await Promise.all(data.map(async (post: any) => {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('profile_image')
+          .eq('user_id', post.user_id)
+          .single();
+
+        if (profileError) {
+         
+          post.profile_image = defaultProfileImageUrl; // Default to anonymous image
+        } else {
+          post.profile_image = profileData?.profile_image || defaultProfileImageUrl;
+        }
+
+        return post;
+      }));
+
+      setPosts(postsWithImages);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching posts:', error);
+     
       setLoading(false);
     }
   };
@@ -55,11 +74,10 @@ const FeedPage = () => {
           <Text>No posts available</Text>
         ) : (
           posts.map((post: any) => (
-            <>
+            <React.Fragment key={post.id}>
               <PostItem
-                key={post.id}
-                profileImage={post.profile_image}
-                userName={post.user_id}
+                profileImage={post.profile_image} // Use the fetched profile image URL
+                userName={post.username || 'Anonymous'} // Default to 'Anonymous' if no username
                 content={post.content}
                 postImage={post.image_url}
                 createdAt={post.created_at}
@@ -67,11 +85,9 @@ const FeedPage = () => {
                 comments={post.comments || 0}
               />
               <Divider />
-            </>
+            </React.Fragment>
           ))
-
         )}
-
       </ScrollView>
       <BottomNav />
     </View>

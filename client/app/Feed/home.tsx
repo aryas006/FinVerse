@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, ActivityIndicator, Text, Image } from 'react-native';
+import { StyleSheet, ScrollView, View, ActivityIndicator, Text, Image, TouchableOpacity } from 'react-native';
 import { supabase } from '@/supabaseClient';
 import { BlurView } from 'expo-blur'; // Import BlurView
 import PostItem from '../Components/posts';
 import BottomNav from '../Components/BottomNav';
 import { Divider } from 'react-native-elements/dist/divider/Divider';
+import { useRouter } from 'expo-router';
 
 const FeedPage = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
+
+  const handleProfileNavigation = () => {
+    router.push('/Profile/profilePage'); // Replace '/profile' with your actual profile page route
+  };
 
   const defaultProfileImageUrl = 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png';
 
@@ -64,10 +71,13 @@ const FeedPage = () => {
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <BlurView intensity={50} tint="light" style={styles.topNavBar}>
         <Text style={styles.header}>Home</Text>
+        
+        <TouchableOpacity onPress={handleProfileNavigation}>
         <Image
           source={require('../../assets/images/pp.jpg')}
           style={styles.profileIcon}
         />
+       </TouchableOpacity>
       </BlurView>
       <ScrollView contentContainerStyle={styles.feedContainer}>
         {posts.length === 0 ? (

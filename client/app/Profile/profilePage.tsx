@@ -2,10 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/supabaseClient';
+import { useRouter } from 'expo-router';
 
 const UserProfile: React.FC = () => {
   const [user, setUser] = useState<any>(null); // Holds user data
   const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
+  
+    const handleeditNav = () => {
+      router.push('/Profile/profileSetup'); // Replace '/profile' with your actual profile page route
+    };
 
   const fetchUserData = async () => {
     try {
@@ -69,8 +76,8 @@ const UserProfile: React.FC = () => {
             style={styles.profileImage} 
           />
         </View>
-        <TouchableOpacity style={styles.connectButton}>
-          <Text style={styles.connectButtonText}>Connect</Text>
+        <TouchableOpacity onPress={handleeditNav} style={styles.connectButton}>
+          <Text style={styles.connectButtonText}>Edit</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.userInfo}>

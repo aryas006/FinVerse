@@ -33,6 +33,22 @@ export default function DetailsScreen() {
 
     const navigation = useNavigation();
 
+    const [currentUpvotes, setCurrentUpvotes] = useState(parseInt(Array.isArray(upvotes) ? upvotes[0] : upvotes));
+    const [hasUpvoted, setHasUpvoted] = useState(isUpvoted === 'true'); // Assuming 'isUpvoted' is passed as a string
+
+    const handleUpvote = () => {
+        if (hasUpvoted) {
+            // If already upvoted, decrement the upvotes
+            setCurrentUpvotes(prev => prev - 1);
+        } else {
+            // If not upvoted, increment the upvotes
+            setCurrentUpvotes(prev => prev + 1);
+        }
+        setHasUpvoted(!hasUpvoted);  // Toggle the upvote state
+    };
+
+
+
     const [fundingAmount, setFundingAmount] = useState(0);
     const [showFundingModal, setShowFundingModal] = useState(false);
     const [inputAmount, setInputAmount] = useState('');
@@ -41,6 +57,20 @@ export default function DetailsScreen() {
     const [descriptionText, setDescriptionText] = useState('');
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [balance, setBalance] = useState(1000); // Example starting balance
+
+    const handleAddFunds = () => {
+        setBalance(balance + 100); // Add $100 to the balance
+    };
+
+    const handleWithdrawFunds = () => {
+        if (balance >= 100) {
+            setBalance(balance - 100); // Subtract $100 from the balance
+        } else {
+            alert("Insufficient balance");
+        }
+    };
 
     const imageScale = scrollY.interpolate({
         inputRange: [-100, 0],
@@ -75,7 +105,25 @@ export default function DetailsScreen() {
         setFundingAmount(prev => prev + amount);
         setShowFundingModal(false);
         setInputAmount('');
+        setInputEquity('');
         setDescriptionText('');
+    };
+
+    const handlePress = () => {
+        Animated.sequence([
+            Animated.spring(scaleAnim, {
+                toValue: 0.8,
+                useNativeDriver: true,
+                speed: 50,
+            }),
+            Animated.spring(scaleAnim, {
+                toValue: 1,
+                useNativeDriver: true,
+                speed: 50,
+            }),
+        ]).start();
+
+        handleUpvote();  // Directly call handleUpvote() to toggle the upvote
     };
 
     return (
@@ -126,7 +174,8 @@ export default function DetailsScreen() {
                             <Text style={styles.metricLabel}>Industry</Text>
                         </View>
                         <View style={styles.metricItem}>
-                            <Text style={styles.metricValue}>{upvotes}</Text>
+
+                            <Text style={styles.metricValue}>{upvotes} </Text>
                             <Text style={styles.metricLabel}>Upvotes</Text>
                         </View>
                     </View>
@@ -137,9 +186,10 @@ export default function DetailsScreen() {
                         <Text style={styles.actionButtonText}>Contact</Text>
                     </Pressable>
 
-                    <Pressable style={styles.actionButton}>
-                        <Ionicons name="mail-outline" size={24} color="#FFFFFF" />
-                        <Text style={styles.actionButtonText}>Contact</Text>
+                    <Pressable style={styles.actionButton} onPress={handlePress}>
+                        <Text style={[styles.upvoteIcon, hasUpvoted && styles.upvoteIconActive]}>▲</Text>
+
+                        <Text style={styles.actionButtonText}>UpVote</Text>
                     </Pressable>
                     <Pressable style={styles.actionButton}>
                         <Ionicons name="share-outline" size={24} color="#FFFFFF" />
@@ -201,8 +251,8 @@ export default function DetailsScreen() {
                             </Text>
                             <TextInput
                                 style={styles.amountInput}
-                                value={inputAmount}
-                                onChangeText={setInputAmount}
+                                value={inputEquity}
+                                onChangeText={setInputEquity}
                                 keyboardType="decimal-pad"
                                 placeholder="Enter Equity"
                                 placeholderTextColor="#808080"
@@ -232,7 +282,7 @@ export default function DetailsScreen() {
                         />
 
                         <Pressable style={styles.confirmButton} onPress={confirmFunding}>
-                            <Text style={styles.confirmButtonText}>Confirm Funding</Text>
+                            <Text style={styles.confirmButtonText}>Confirm Funding Proposal</Text>
                         </Pressable>
 
                         <Pressable
@@ -244,6 +294,8 @@ export default function DetailsScreen() {
                     </View>
                 </BlurView>
             </Modal>
+
+
 
             <Pressable
                 style={styles.fundButton}
@@ -418,6 +470,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         height: 100,
         textAlignVertical: 'top',
+        marginBottom: 20,
 
     },
     confirmButton: {
@@ -460,6 +513,13 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 12,
         marginTop: 4,
+    },
+    upvoteIcon: {
+        fontSize: 24,
+        color: '#FFFFFF',
+    },
+    upvoteIconActive: {
+        color: '#4CAF50',
     },
     locationSection: {
         padding: 20,

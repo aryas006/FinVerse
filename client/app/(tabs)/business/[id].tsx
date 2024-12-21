@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     StyleSheet,
     View,
@@ -12,10 +12,14 @@ import {
     Modal,
     ImageSourcePropType,
     ImageBackground,
+    Pressable,
+    Animated,
+    TextInput,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '@/supabaseClient';
+import { BlurView } from 'expo-blur';
 
 interface TeamMember {
     id: string;
@@ -54,6 +58,15 @@ export default function Business() {
     const [startup, setStartup] = useState<Startup | null>(null);
     const [loading, setLoading] = useState(true);
     // const [isModalVisible, setModalVisible] = useState(false);
+    const [showFundingModal, setShowFundingModal] = useState(false);
+    const [fundingType, setFundingType] = useState<'money' | 'equity'>('money');
+    const [inputAmount, setInputAmount] = useState('');
+    const [inputEquity, setInputEquity] = useState('');
+    const [descriptionText, setDescriptionText] = useState('');
+    const [fundingAmount, setFundingAmount] = useState(0);
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
+
 
     const fetchStartupById = async (startupId: string | undefined) => {
         try {
@@ -105,7 +118,22 @@ export default function Business() {
             setLoading(false);
         }
     };
+    const confirmFunding = () => {
+        const amount = parseFloat(inputAmount);
+        if (isNaN(amount) || amount <= 0) return;
 
+        console.log({
+            fundingType,
+            amount,
+            description: descriptionText,
+        });
+
+        setFundingAmount(prev => prev + amount);
+        setShowFundingModal(false);
+        setInputAmount('');
+        setInputEquity('');
+        setDescriptionText('');
+    };
 
     useEffect(() => {
         fetchStartupById(id as string);
@@ -134,6 +162,13 @@ export default function Business() {
         Alert.alert('Connection Request Sent', 'You have sent a connection request!');
     };
 
+    const handleFunding = () => {
+        setShowFundingModal(true);
+        Animated.sequence([
+            Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true, speed: 50 }),
+            Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }),
+        ]).start();
+    };
 
 
 
@@ -143,6 +178,87 @@ export default function Business() {
             source={require("../../../assets/images/event_bg.png")}
             style={styles.backgroundImage}
         >
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showFundingModal}
+                onRequestClose={() => setShowFundingModal(false)}
+            >
+                <BlurView intensity={100} style={styles.modalBlur}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Fund Proposal</Text>
+                        {/* <Text style={styles.modalSubtitle}>{name}</Text> */}
+
+                        {/* <View style={styles.fundingTypeContainer}>
+                            <Pressable
+                                style={[
+                                    styles.fundingTypeButton,
+                                    fundingType === 'money' && styles.activeFundingType,
+                                ]}
+                                onPress={() => setFundingType('money')}
+                            >
+                                <Text style={styles.fundingTypeText}>Money</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[
+                                    styles.fundingTypeButton,
+                                    fundingType === 'equity' && styles.activeFundingType,
+                                ]}
+                                onPress={() => setFundingType('equity')}
+                            >
+                                <Text style={styles.fundingTypeText}>Equity</Text>
+                            </Pressable>
+                        </View> */}
+
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.dollarSign}>
+                                %
+                            </Text>
+                            <TextInput
+                                style={styles.amountInput}
+                                value={inputEquity}
+                                onChangeText={setInputEquity}
+                                keyboardType="decimal-pad"
+                                placeholder="Enter Equity"
+                                placeholderTextColor="#808080"
+                            />
+                        </View>
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.dollarSign}>
+                                Rs.
+                            </Text>
+                            <TextInput
+                                style={styles.amountInput}
+                                value={inputAmount}
+                                onChangeText={setInputAmount}
+                                keyboardType="decimal-pad"
+                                placeholder="Enter amount"
+                                placeholderTextColor="#808080"
+                            />
+                        </View>
+
+                        <TextInput
+                            style={styles.descriptionInput}
+                            value={descriptionText}
+                            onChangeText={setDescriptionText}
+                            placeholder="Enter description (optional)"
+                            placeholderTextColor="#808080"
+                            multiline
+                        />
+
+                        <Pressable style={styles.confirmButton} onPress={confirmFunding}>
+                            <Text style={styles.confirmButtonText}>Confirm Funding Proposal</Text>
+                        </Pressable>
+
+                        <Pressable
+                            style={styles.cancelButton}
+                            onPress={() => setShowFundingModal(false)}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </Pressable>
+                    </View>
+                </BlurView>
+            </Modal>
             <Text style={{
                 marginTop: 50,
                 marginLeft: 20,
@@ -184,7 +300,7 @@ export default function Business() {
                         {startup?.desc}
                     </Text>
                     <View style={styles.actionsContainer}>
-                        <TouchableOpacity style={styles.actionButton}>
+                        <TouchableOpacity style={styles.actionButton} onPress={handleFunding}>
                             <Image
                                 source={require("../../../assets/images/coin_icon.png")}
                                 style={styles.menuIcon}
@@ -654,7 +770,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
-        width: '80%',
+        width: '100%',
         backgroundColor: '#fff',
         padding: 20,
         borderRadius: 10,
@@ -696,5 +812,130 @@ const styles = StyleSheet.create({
         width: '100%', // Full width of the container
         marginVertical: 16,
         marginHorizontal: "auto"
+    },
+    modalBlur: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+
+
+    modalSubtitle: {
+        fontSize: 16,
+        color: '#B0B0B0',
+        marginBottom: 20,
+    },
+    fundingTypeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    fundingTypeButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: '#2A2A2A',
+        marginHorizontal: 4,
+        alignItems: 'center',
+    },
+    activeFundingType: {
+        backgroundColor: '#4CAF50',
+    },
+    fundingTypeText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#2A2A2A',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+    },
+    dollarSign: {
+        fontSize: 24,
+        color: '#FFFFFF',
+        marginRight: 8,
+    },
+    amountInput: {
+        flex: 1,
+        fontSize: 24,
+        color: '#FFFFFF',
+    },
+    descriptionInput: {
+        backgroundColor: '#2A2A2A',
+        borderRadius: 12,
+        padding: 16,
+        color: '#FFFFFF',
+        fontSize: 16,
+        height: 100,
+        textAlignVertical: 'top',
+        marginBottom: 20,
+        width: '100%',
+
+    },
+    confirmButton: {
+        backgroundColor: '#4CAF50',
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginBottom: 20,
+        width: '100%',
+    },
+    confirmButtonText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    cancelButton: {
+        padding: 16,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: '#808080',
+        fontSize: 16,
+    },
+    bottomBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '90%',
+        alignSelf: 'center',
+
+        marginBottom: 24
+
+    },
+
+    actionButtonText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        marginTop: 4,
+    },
+    upvoteIcon: {
+        fontSize: 24,
+        color: '#FFFFFF',
+    },
+    upvoteIconActive: {
+        color: '#4CAF50',
+    },
+    locationSection: {
+        padding: 20,
+        backgroundColor: '#1A1A1A',
+    },
+
+    locationText: {
+        fontSize: 16,
+        color: '#B0B0B0',
+        marginBottom: 10,
+    },
+    mapPlaceholder: {
+        height: 200,
+        backgroundColor: '#2A2A2A',
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    mapText: {
+        color: '#808080',
+        marginTop: 8,
     },
 });

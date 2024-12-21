@@ -14,6 +14,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/supabaseClient';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
+import { router, useRouter } from 'expo-router';
+
 
 interface ProjectExperience {
   image: string | null;
@@ -32,6 +34,7 @@ const ProfileSetup: React.FC = () => {
   const [bio, setBio] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const navigation = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -163,6 +166,7 @@ const ProfileSetup: React.FC = () => {
       if (error) throw error;
 
       console.log('Profile updated successfully!');
+      router.push('/Feed/home');
     } catch (error) {
       console.error('Error uploading images or saving profile:', error);
     }

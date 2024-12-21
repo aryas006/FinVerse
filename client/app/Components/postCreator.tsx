@@ -3,10 +3,14 @@ import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, Mod
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
+import { supabase } from '@/supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 
 const CreatePostOrEvent = () => {
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [isEvent, setIsEvent] = useState(false);
   const [modalVisible, setModalVisible] = useState(true);
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -16,6 +20,63 @@ const CreatePostOrEvent = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const navigation = useNavigation();
+
+
+  const uploadDataToSupabase = async () => {
+    if (!title || !content) {
+      Alert.alert('Validation Error', 'Event name and description are required.');
+      return;
+    }
+
+    // let uploadedImageUrl = null;
+    // if (imageUri) {
+    //   try {
+    //     uploadedImageUrl = await uploadImageToSupabase(imageUri);
+    //   } catch (error) {
+    //     Alert.alert('Error', 'Failed to upload image.');
+    //     return; // Abort if the image upload fails
+    //   }
+    // }
+
+    // Retrieve user ID
+    let userId = null;
+    try {
+      userId = await AsyncStorage.getItem('authToken');
+      if (!userId) {
+        Alert.alert('Error', 'Failed to retrieve user authentication ID.');
+        return;
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to retrieve authentication data.');
+      return;
+    }
+
+    // Prepare event data
+    const data = {
+      event_name: title, // Event name (varchar)
+      description: content, // Event description (varchar)
+      event_date_time: eventDate ? eventDate.toISOString() : null, // Event date-time (timestamptz)
+      schedules: schedules.length ? schedules : null, // Schedules as JSON
+      user_id: userId, // User ID (uuid)
+      // event_id: crypto.randomUUID(), // Generate a unique UUID for the event
+    };
+
+    // Insert into Supabase
+    const { data: insertedData, error } = await supabase
+      .from('events') // Target table
+      .insert(data); // Use an array for insertion
+
+    router.push('/Feed/home'); // Replace '/profile' with your actual profile page route
+    if (error) {
+      Alert.alert('Error', `Failed to create event: ${error.message}`);
+      return;
+    }
+
+    Alert.alert('Success', 'Event created successfully!');
+    setModalVisible(false);
+  };
+
+
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -117,6 +178,17 @@ const CreatePostOrEvent = () => {
                   )}
 
                   <View style={styles.descriptionContainer}>
+                    <Text style={styles.label}>Name</Text>
+                    <TextInput
+                      style={[styles.inputLarge]}
+                      placeholder={isEvent ? 'Add event Name...' : 'Write your post Name...'}
+                      multiline
+                      value={title}
+                      onChangeText={setTitle}
+                    />
+                  </View>
+
+                  <View style={styles.descriptionContainer}>
                     <Text style={styles.label}>Description</Text>
                     <TextInput
                       style={[styles.inputLarge, { height: 170 }]}
@@ -131,10 +203,11 @@ const CreatePostOrEvent = () => {
                     <ScrollView
                       contentContainerStyle={{
                         paddingBottom: 20, // Ensures there's enough space at the bottom
+
                       }}
                       style={{
-
                         maxHeight: 200, // Fixed height to prevent resizing
+                        width: '100%',
                       }}
                       keyboardShouldPersistTaps="handled" // Prevents ScrollView from resetting
                     >
@@ -166,38 +239,38 @@ const CreatePostOrEvent = () => {
 
                         <View key={index} style={styles.scheduleRow}>
                           {/* <Text style={styles.label}>Schedule {index + 1}</Text> */}
-                          <View style={{flexDirection:'column'}}>
-                          <TextInput
-                            style={styles.inputSchedule}
-                            placeholder={`Enter details for Schedule ${index + 1}`}
-                            value={schedule}
-                            onChangeText={(value) => updateSchedule(index, value)}
-                          />
-                          <TouchableOpacity
-                        onPress={() => setShowDatePicker(true)}
-                        style={styles.datePickerButton}
-                      >
-                        <Text style={styles.datePickerText}>{
-                          eventDate
-                            ? ` Date: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString()}`
-                            : 'Select Event Date'
-                        }</Text>
-                      </TouchableOpacity>
+                          <View style={{ flexDirection: 'column', gap: 8, width: '80%', }}>
+                            <TextInput
+                              style={styles.inputSchedule}
+                              placeholder={`Enter details for Schedule ${index + 1}`}
+                              value={schedule}
+                              onChangeText={(value) => updateSchedule(index, value)}
+                            />
+                            <TouchableOpacity
+                              onPress={() => setShowDatePicker(true)}
+                              style={styles.datePickerButton}
+                            >
+                              <Text style={styles.datePickerText}>{
+                                eventDate
+                                  ? ` Date: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString()}`
+                                  : 'Select Event Date'
+                              }</Text>
+                            </TouchableOpacity>
 
-                      {showDatePicker && (
-                        <DateTimePicker
-                          value={eventDate || new Date()}
-                          mode="datetime"
-                          display="spinner"
-                          textColor="black"
-                          onChange={(event, selectedDate) => {
-                            setShowDatePicker(false);
-                            if (selectedDate) setEventDate(selectedDate);
-                          }}
-                        />
-                      )}
+                            {showDatePicker && (
+                              <DateTimePicker
+                                value={eventDate || new Date()}
+                                mode="datetime"
+                                display="spinner"
+                                textColor="black"
+                                onChange={(event, selectedDate) => {
+                                  setShowDatePicker(false);
+                                  if (selectedDate) setEventDate(selectedDate);
+                                }}
+                              />
+                            )}
                           </View>
-                        
+
                           <TouchableOpacity
                             style={styles.removeScheduleButton}
                             onPress={() => removeScheduleBox(index)}
@@ -221,6 +294,7 @@ const CreatePostOrEvent = () => {
                       setSchedules(['']);
                       setImageUri(null);
                       setEventDate(null);
+                      uploadDataToSupabase();
                     }}
                   >
                     <Text style={styles.buttonText}>{isEvent ? 'Post Event' : 'Post'}</Text>
@@ -327,24 +401,27 @@ const styles = StyleSheet.create({
   scheduleRow: {
     flexDirection: 'row',
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    // justifyContent: 'space-between',
     marginBottom: 10,
+    width: '100%',
+
   },
   inputSchedule: {
     backgroundColor: '#f9f9f9',
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 8,
-    width: '80%',
+    width: '100%',
     borderWidth: 2,
     borderColor: '#ddd',
   },
   removeScheduleButton: {
     backgroundColor: '#FF6B6B',
-    paddingVertical: 12,
-    borderRadius: 10,
-    paddingHorizontal: 20,
+    padding: 12,
+    borderRadius: 100,
+    marginLeft: 10,
+
   },
   addScheduleButton: {
     backgroundColor: '#f0f0f0',
@@ -372,7 +449,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   label: {

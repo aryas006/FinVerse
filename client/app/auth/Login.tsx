@@ -20,15 +20,18 @@ const Login = ({ navigation }: any) => {
         throw error;
       }
 
-      // Storing the authentication ID (session) in AsyncStorage
+      // Storing the authentication ID (session) and username in AsyncStorage
       const authSession = data?.session;
       const authId = data.user.id;
+      const username = data.user.user_metadata?.username; // Assuming username is stored in user metadata
+
       if (authSession) {
-        await AsyncStorage.setItem('authToken',data.user.id);
+        await AsyncStorage.setItem('authToken', authId);  // Storing user id as 'authToken'
+        await AsyncStorage.setItem('username', username || '');  // Storing username
 
         Alert.alert('Login Successful', 'You are now logged in.');
         
-        router.push('/Profile/profileSetup'); // Navigate to the home screen after login
+        router.push('/Profile/profileSetup'); // Navigate to the profile setup screen
       } else {
         throw new Error('Session not found');
       }

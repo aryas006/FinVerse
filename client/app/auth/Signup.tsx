@@ -6,39 +6,45 @@ import { useRouter } from 'expo-router';
 const Signup = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [dob, setDob] = useState('');
   const router = useRouter();
 
   const handleSignup = async () => {
     try {
       // Sign up with email and password using Supabase Auth
       const { data, error } = await supabase.auth.signUp({ email, password });
-  
+
       if (error) {
         throw error;
       }
-  
-      // Access the user object from the response's 'data' field
-      const user = data?.user;
-  
-      if (user) {
-        // Assuming '1' is the ID for the default role 'individual' in the roles table
-        const defaultRoleId = 1;  // Adjust this based on your roles table
 
-        // After successful signup, insert user details into the 'users' table
+      const user = data?.user;
+
+      if (user) {
+        // Inserting user data into the profiles table
         const { error: insertError } = await supabase
-          .from('users')
+          .from('profiles')  // Updated table name
           .insert([
             {
-              id: user.id,
               email: user.email,
-              role_id: defaultRoleId,  // Insert the role ID, not the 'role' field
+              username,
+              dob,
+              password,
+              user_id: user.id,  // Storing user_id
+              full_name: '',  // Optional, you can add more fields if needed
+              profile_image: '', // Optional, you can set default empty or null
+              connections: [],
+              followers: [],
+              projects: [],
+              experience: []
             },
           ]);
-  
+
         if (insertError) {
           throw insertError;
         }
-  
+
         Alert.alert('Signup Successful', 'Please log in.');
         router.push('/auth/Login'); // Navigate to login page after signup
       } else {
@@ -54,6 +60,12 @@ const Signup = ({ navigation }: any) => {
       <Text style={styles.title}>Signup</Text>
       <TextInput
         style={styles.input}
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
+      />
+      <TextInput
+        style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
@@ -66,6 +78,12 @@ const Signup = ({ navigation }: any) => {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Date of Birth (YYYY-MM-DD)"
+        value={dob}
+        onChangeText={setDob}
       />
       <Button title="Sign Up" onPress={handleSignup} />
     </View>

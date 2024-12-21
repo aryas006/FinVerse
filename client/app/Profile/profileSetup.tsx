@@ -5,9 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   Image,
   ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +15,7 @@ import { supabase } from '@/supabaseClient';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 
-interface Project {
+interface ProjectExperience {
   image: string | null;
   title: string;
   description: string;
@@ -23,9 +23,12 @@ interface Project {
 
 const ProfileSetup: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [name, setName] = useState<string>('');
-  const [headline, setHeadline] = useState<string>('');
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [projects, setProjects] = useState<ProjectExperience[]>([]);
+  const [experience, setExperience] = useState<ProjectExperience[]>([]);
+  const [role, setRole] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+  const [dob, setDob] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -37,20 +40,33 @@ const ProfileSetup: React.FC = () => {
         if (!authToken) throw new Error('User not authenticated.');
 
         const { data, error } = await supabase
-          .from('users')
-          .select('email, name, headline, bio, profile_image, projects')
-          .eq('id', authToken)
+          .from('profiles')
+          .select(`
+            email,
+            username,
+            role,
+            dob,
+            bio,
+            profile_image,
+            cover_image,
+            projects,
+            experience
+          `)
+          .eq('user_id', authToken)
           .single();
 
         if (error) throw error;
 
         if (data) {
           setEmail(data.email || '');
-          setName(data.name || '');
-          setHeadline(data.headline || '');
+          setUsername(data.username || '');
+          setRole(data.role || '');
+          setDob(data.dob || '');
           setBio(data.bio || '');
           setProfileImage(data.profile_image || null);
+          setCoverImage(data.cover_image || null);
           setProjects(data.projects ? JSON.parse(data.projects) : []);
+          setExperience(data.experience ? JSON.parse(data.experience) : []);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -62,8 +78,8 @@ const ProfileSetup: React.FC = () => {
     fetchUserData();
   }, []);
 
-  const handleAddProject = () => {
-    setProjects([...projects, { image: null, title: '', description: '' }]);
+  const handleAddEntry = (setter: React.Dispatch<React.SetStateAction<ProjectExperience[]>>) => {
+    setter((prev) => [...prev, { image: null, title: '', description: '' }]);
   };
 
   const handlePickImage = async (onUploadCallback: (uri: string) => void) => {
@@ -82,31 +98,23 @@ const ProfileSetup: React.FC = () => {
   const uploadImage = async (uri: string, type: 'profile-pic' | 'posts') => {
     try {
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-      const fileName = `${type}/${Date.now()}.jpg`; // Creating a file name based on the timestamp
-      const contentType = 'image/jpeg'; // Assuming the image is jpeg
+      const fileName = `${type}/${Date.now()}.jpg`;
+      const contentType = 'image/jpeg';
 
       const { data, error } = await supabase.storage
         .from(type === 'profile-pic' ? 'profile-images' : 'posts')
-        .upload(fileName, decode(base64), {
-          contentType: contentType,
-        });
+        .upload(fileName, decode(base64), { contentType });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const { data: publicUrlData } = supabase.storage
         .from(type === 'profile-pic' ? 'profile-images' : 'posts')
         .getPublicUrl(fileName);
 
-      if (publicUrlData?.publicUrl) {
-        return publicUrlData.publicUrl;
-      } else {
-        throw new Error('Failed to fetch public URL.');
-      }
-    } catch (error: any) {
+      return publicUrlData?.publicUrl || uri;
+    } catch (error) {
       console.error('Error uploading image:', error);
-      return uri; // Return the URI as a fallback
+      return uri;
     }
   };
 
@@ -115,44 +123,47 @@ const ProfileSetup: React.FC = () => {
       const authToken = await AsyncStorage.getItem('authToken');
       if (!authToken) throw new Error('User not authenticated.');
 
-      let uploadedProfileImage = profileImage;
+      const uploadedProfileImage =
+        profileImage && !profileImage.startsWith('https://')
+          ? await uploadImage(profileImage, 'profile-pic')
+          : profileImage;
 
-      // Upload profile image if selected
-      if (profileImage && !profileImage.startsWith('https://')) {
-        uploadedProfileImage = await uploadImage(profileImage, 'profile-pic');
-      }
+      const uploadedCoverImage =
+        coverImage && !coverImage.startsWith('https://')
+          ? await uploadImage(coverImage, 'profile-pic')
+          : coverImage;
 
-      // Upload project images
       const uploadedProjects = await Promise.all(
-        projects.map(async (project) => {
-          let uploadedImage = project.image;
-
-          if (project.image && !project.image.startsWith('https://')) {
-            uploadedImage = await uploadImage(project.image, 'posts');
-          }
-
-          return {
-            ...project,
-            image: uploadedImage,
-          };
-        })
+        projects.map(async (item) => ({
+          ...item,
+          image: item.image && !item.image.startsWith('https://') ? await uploadImage(item.image, 'posts') : item.image,
+        }))
       );
 
-      // Save profile data to Supabase
-      const { error } = await supabase.from('users').upsert({
-        id: authToken,
-        name,
-        headline,
+      const uploadedExperience = await Promise.all(
+        experience.map(async (item) => ({
+          ...item,
+          image: item.image && !item.image.startsWith('https://') ? await uploadImage(item.image, 'posts') : item.image,
+        }))
+      );
+
+      const { error } = await supabase.from('profiles').upsert({
+        user_id: authToken,
+        username,
+        role,
+        dob,
         bio,
         profile_image: uploadedProfileImage,
+        cover_image: uploadedCoverImage,
         email,
         projects: JSON.stringify(uploadedProjects),
+        experience: JSON.stringify(uploadedExperience),
       });
 
       if (error) throw error;
 
       console.log('Profile updated successfully!');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading images or saving profile:', error);
     }
   };
@@ -169,6 +180,7 @@ const ProfileSetup: React.FC = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Setup Your Profile</Text>
 
+      {/* Profile Picture */}
       <View style={styles.section}>
         <Text style={styles.label}>Profile Picture</Text>
         <TouchableOpacity
@@ -183,35 +195,40 @@ const ProfileSetup: React.FC = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Username */}
       <View style={styles.section}>
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>Username</Text>
         <TextInput
           style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter your name"
+          value={username}
+          onChangeText={setUsername}
+          placeholder="Enter your username"
         />
       </View>
 
+      {/* Role */}
       <View style={styles.section}>
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>Role</Text>
         <TextInput
           style={styles.input}
-          value={email}
-          editable={false}
+          value={role}
+          onChangeText={setRole}
+          placeholder="Enter your role"
         />
       </View>
 
+      {/* Date of Birth */}
       <View style={styles.section}>
-        <Text style={styles.label}>Headline</Text>
+        <Text style={styles.label}>Date of Birth</Text>
         <TextInput
           style={styles.input}
-          value={headline}
-          onChangeText={setHeadline}
-          placeholder="Add a professional headline"
+          value={dob}
+          onChangeText={setDob}
+          placeholder="YYYY-MM-DD"
         />
       </View>
 
+      {/* Bio */}
       <View style={styles.section}>
         <Text style={styles.label}>Bio</Text>
         <TextInput
@@ -223,6 +240,7 @@ const ProfileSetup: React.FC = () => {
         />
       </View>
 
+      {/* Projects */}
       <View style={styles.section}>
         <Text style={styles.label}>Projects</Text>
         {projects.map((project, index) => (
@@ -266,8 +284,57 @@ const ProfileSetup: React.FC = () => {
             />
           </View>
         ))}
-        <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
+        <TouchableOpacity style={styles.addButton} onPress={() => handleAddEntry(setProjects)}>
           <Text style={styles.addButtonText}>Add Project</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Experience */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Experience</Text>
+        {experience.map((exp, index) => (
+          <View key={index} style={styles.projectContainer}>
+            <TouchableOpacity
+              style={styles.imagePicker}
+              onPress={() =>
+                handlePickImage((uri) => {
+                  const updatedExperience = [...experience];
+                  updatedExperience[index].image = uri;
+                  setExperience(updatedExperience);
+                })
+              }
+            >
+              {exp.image ? (
+                <Image source={{ uri: exp.image }} style={styles.projectImage} />
+              ) : (
+                <Text style={styles.imagePickerText}>Pick Experience Image</Text>
+              )}
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              value={exp.title}
+              onChangeText={(text) => {
+                const updatedExperience = [...experience];
+                updatedExperience[index].title = text;
+                setExperience(updatedExperience);
+              }}
+              placeholder="Experience Title"
+            />
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={exp.description}
+              onChangeText={(text) => {
+                const updatedExperience = [...experience];
+                updatedExperience[index].description = text;
+                setExperience(updatedExperience);
+              }}
+              placeholder="Experience Description"
+              multiline
+            />
+          </View>
+        ))}
+        <TouchableOpacity style={styles.addButton} onPress={() => handleAddEntry(setExperience)}>
+          <Text style={styles.addButtonText}>Add Experience</Text>
         </TouchableOpacity>
       </View>
 
@@ -277,6 +344,8 @@ const ProfileSetup: React.FC = () => {
     </ScrollView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   loaderContainer: {

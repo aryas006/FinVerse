@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import BottomNav from '../Components/BottomNav';
 
 interface Event {
   id: string;
@@ -178,6 +179,8 @@ const Discover = () => {
   }
 
   return (
+    <>
+    
     <ScrollView style={styles.container}>
         <View style={styles.topNavBar}>
             <Text style={styles.header}>Discover</Text>
@@ -254,6 +257,8 @@ const Discover = () => {
         ))}
       </ScrollView>
     </ScrollView>
+    <BottomNav></BottomNav>
+    </>
   );
 };
 

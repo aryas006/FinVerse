@@ -6,7 +6,7 @@ import BottomNav from './Components/BottomNav';
 const Index = () => {
     return (
         <View style={styles.container}>
-            <Link href="/Profile/profileSetup" style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            <Link href="/auth/Login" style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
             </Link>
 

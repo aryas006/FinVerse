@@ -4,10 +4,11 @@ import { Link } from 'expo-router';
 import BottomNav from './Components/BottomNav';
 
 const Index = () => {
-    const id = "d4e0884c-e8e3-4dc3-85f2-25f4c02b562f";
+    // const id = "d4e0884c-e8e3-4dc3-85f2-25f4c02b562f";
     return (
         <View style={styles.container}>
-            <Link href={'/auth/Signup'} style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            {/* <Link href={'/search'} style={{ fontSize: 40, fontFamily: 'monospace' }}> */}
+            <Link href={'/auth/Login'} style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
             </Link>
 

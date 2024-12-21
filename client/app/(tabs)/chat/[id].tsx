@@ -30,8 +30,8 @@ export default function ChatPage() {
   // Get current user's ID from local storage
   useEffect(() => {
     const fetchUserId = async () => {
-        const storedUserId = "60fa5087-bb09-4240-ba82-0d05e5ae1785";
-        // const storedUserId = await AsyncStorage.getItem('authToken');
+        // const storedUserId = "60fa5087-bb09-4240-ba82-0d05e5ae1785";
+        const storedUserId = await AsyncStorage.getItem('authToken');
       if (storedUserId) {
         setUserId(storedUserId);
       } else {

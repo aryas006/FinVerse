@@ -12,9 +12,11 @@ import {
     TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+
+
 
 export default function DetailsScreen() {
     const {
@@ -29,9 +31,12 @@ export default function DetailsScreen() {
         isUpvoted,
     } = useLocalSearchParams();
 
+    const navigation = useNavigation();
+
     const [fundingAmount, setFundingAmount] = useState(0);
     const [showFundingModal, setShowFundingModal] = useState(false);
     const [inputAmount, setInputAmount] = useState('');
+    const [inputEquity, setInputEquity] = useState('');
     const [fundingType, setFundingType] = useState<'money' | 'equity'>('money');
     const [descriptionText, setDescriptionText] = useState('');
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -75,6 +80,15 @@ export default function DetailsScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <Text
+                onPress={() => { navigation.goBack() }}
+                style={{
+                    color: '#FFFFFF',
+                    fontSize: 18,
+                    fontWeight: '100',
+                    padding: 10,
+                }}
+            >Back</Text>
             <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
                 <Text style={styles.headerTitle}>{name}</Text>
             </Animated.View>
@@ -148,12 +162,6 @@ export default function DetailsScreen() {
                 </View>
             </ScrollView>
 
-            <Pressable
-                style={styles.fundButton}
-                onPress={handleFunding}
-            >
-                <Text style={styles.fundButtonText}>Fund This Project</Text>
-            </Pressable>
 
             <Modal
                 animationType="slide"
@@ -237,7 +245,13 @@ export default function DetailsScreen() {
                 </BlurView>
             </Modal>
 
-        </SafeAreaView>
+            <Pressable
+                style={styles.fundButton}
+                onPress={handleFunding}
+            >
+                <Text style={styles.fundButtonText}>Fund This Project</Text>
+            </Pressable>
+        </SafeAreaView >
     );
 }
 
@@ -303,7 +317,7 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: '#1A1A1A',
         borderRadius: 16,
-        marginBottom: 20,
+
     },
     metricItem: {
         alignItems: 'center',
@@ -323,8 +337,14 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 20,
         marginHorizontal: 20,
+        bottom: 20,
+        width: '90%',
+        alignSelf: 'center',
+        paddingBottom: 20,
+        position: 'absolute',
+        marginBottom: 20,
+
     },
     fundButtonText: {
         color: '#FFFFFF',
@@ -405,7 +425,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 20,
     },
     confirmButtonText: {
         color: '#FFFFFF',
@@ -426,7 +446,7 @@ const styles = StyleSheet.create({
         width: '90%',
         alignSelf: 'center',
 
-        marginBottom: 20,
+        marginBottom: 24
 
     },
     actionButton: {
@@ -444,8 +464,6 @@ const styles = StyleSheet.create({
     locationSection: {
         padding: 20,
         backgroundColor: '#1A1A1A',
-        borderRadius: 16,
-
     },
     sectionTitle: {
         fontSize: 20,

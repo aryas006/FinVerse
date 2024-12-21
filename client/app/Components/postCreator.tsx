@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, Modal, KeyboardAvoidingView, Keyboard, Platform, Image } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, Modal, KeyboardAvoidingView, Keyboard, Platform, Image, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
+
 
 const CreatePostOrEvent = () => {
   const [content, setContent] = useState('');
@@ -118,7 +119,7 @@ const CreatePostOrEvent = () => {
                   <View style={styles.descriptionContainer}>
                     <Text style={styles.label}>Description</Text>
                     <TextInput
-                      style={[styles.inputLarge, { height: isEvent ? 80 : 60 }]}
+                      style={[styles.inputLarge, { height: 170 }]}
                       placeholder={isEvent ? 'Add event description...' : 'Write your post description...'}
                       multiline
                       value={content}
@@ -127,7 +128,16 @@ const CreatePostOrEvent = () => {
                   </View>
 
                   {isEvent && (
-                    <>
+                    <ScrollView
+                      contentContainerStyle={{
+                        paddingBottom: 20, // Ensures there's enough space at the bottom
+                      }}
+                      style={{
+
+                        maxHeight: 200, // Fixed height to prevent resizing
+                      }}
+                      keyboardShouldPersistTaps="handled" // Prevents ScrollView from resetting
+                    >
                       <TouchableOpacity
                         onPress={() => setShowDatePicker(true)}
                         style={styles.datePickerButton}
@@ -153,10 +163,11 @@ const CreatePostOrEvent = () => {
                       )}
 
                       {schedules.map((schedule, index) => (
+
                         <View key={index} style={styles.scheduleRow}>
-                          <Text style={styles.label}>Schedule {index + 1}</Text>
+                          {/* <Text style={styles.label}>Schedule {index + 1}</Text> */}
                           <TextInput
-                            style={styles.inputLarge}
+                            style={styles.inputSchedule}
                             placeholder={`Enter details for Schedule ${index + 1}`}
                             value={schedule}
                             onChangeText={(value) => updateSchedule(index, value)}
@@ -168,12 +179,12 @@ const CreatePostOrEvent = () => {
                             <Text style={styles.buttonText}>X</Text>
                           </TouchableOpacity>
                         </View>
-                      ))}
 
+                      ))}
                       <TouchableOpacity style={styles.addScheduleButton} onPress={addScheduleBox}>
                         <Text style={[styles.buttonText, { color: 'black' }]}>Add Schedule</Text>
                       </TouchableOpacity>
-                    </>
+                    </ScrollView>
                   )}
 
                   <TouchableOpacity
@@ -214,7 +225,7 @@ const styles = StyleSheet.create({
     minHeight: '70%',
   },
   reducedContainer: {
-    minHeight: '40%',
+    minHeight: '10%',
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -251,6 +262,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  descriptionContainer: {
+
+  },
   inputLarge: {
     borderColor: '#ddd',
     borderWidth: 1,
@@ -259,6 +273,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
     backgroundColor: '#f9f9f9',
+
   },
   datePickerButton: {
     padding: 12,
@@ -270,7 +285,7 @@ const styles = StyleSheet.create({
   datePickerText: {
     color: '#333',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
   },
   imagePreviewContainer: {
     marginBottom: 16,
@@ -285,15 +300,25 @@ const styles = StyleSheet.create({
   },
   scheduleRow: {
     flexDirection: 'row',
+    display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
+  },
+  inputSchedule: {
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    width: '80%',
+    borderWidth: 2,
+    borderColor: '#ddd',
   },
   removeScheduleButton: {
     backgroundColor: '#FF6B6B',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 12,
     borderRadius: 10,
-    marginLeft: 10,
+    paddingHorizontal: 20,
   },
   addScheduleButton: {
     backgroundColor: '#f0f0f0',
@@ -321,11 +346,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-  },
-  descriptionContainer: {
-    marginBottom: 20,
   },
   label: {
     fontSize: 14,

@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { Link } from 'expo-router';
 import BottomNav from '../Components/BottomNav';
+import { BlurView } from 'expo-blur';
 
 
 type StartupType = {
@@ -198,12 +199,27 @@ const FundingHub = () => {
                             onPress={() => handleUpvote(item.id)}
                         />
                     </View>
-
                 </View>
+
 
                 <View style={styles.startupDetails}>
                     <View style={styles.startupHeader}>
-                        <Text style={styles.startupName}>{item.name}</Text>
+                        <Link href={{
+                            pathname: '/startup/[id]',
+                            params: {
+                                id: item,
+                                image: item.image,
+                                name: item.name,
+                                description: item.description,
+                                status: item.status,
+                                raised: item.raised,
+                                industry: item.industry,
+                                upvotes: item.upvotes,
+                                isUpvoted: item.isUpvoted
+                            },
+                        }}>
+                            <Text style={styles.startupName}>{item.name}</Text>
+                        </Link>
                         {renderStatusBadge(item.status)}
                     </View>
                     <Text style={styles.startupDescription}>{item.description}</Text>
@@ -226,15 +242,15 @@ const FundingHub = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.headerContainer}>
+            <BlurView intensity={50} tint="light" style={styles.headerContainer}>
                 <Text style={styles.header}>Funding Hub</Text>
                 <Text style={styles.headerDescription}>Discover innovative startups</Text>
-            </View>
+            </BlurView>
 
-            <View style={styles.sectionContainer}>
+            {/* <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>Top Startups</Text>
                 <Text style={styles.subTitle}>Trending in the ecosystem</Text>
-            </View>
+            </View> */}
             <FlatList
                 data={startups}
                 renderItem={renderStartup}
@@ -253,18 +269,26 @@ export default FundingHub;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#121212',
+        backgroundColor: 'black',
+
+
+
     },
     headerContainer: {
         padding: 24,
         paddingTop: 60,
-        backgroundColor: '#1E1E1E',
+
+        position: 'absolute', // Ensure it overlays the content
+        top: 0,
+        width: '100%',
+        zIndex: 10, // Bring it above other elements
     },
+
     header: {
         fontSize: 34,
         fontWeight: '700',
-        color: '#FFFFFF',
         letterSpacing: -0.5,
+        color: 'white',
     },
     headerDescription: {
         fontSize: 16,
@@ -288,9 +312,13 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         padding: 16,
+        gap: 16,
+        marginTop: 150,
+        paddingBottom: 100,
     },
     startupList: {
         flex: 1,
+
     },
     startupContainer: {
         flexDirection: 'row',
@@ -300,6 +328,8 @@ const styles = StyleSheet.create({
         padding: 16,
         borderWidth: 1,
         borderColor: '#2A2A2A',
+
+
     },
     startupImage: {
         width: 80,

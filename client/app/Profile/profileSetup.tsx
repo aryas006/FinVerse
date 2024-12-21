@@ -1,235 +1,335 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Button, Image, StyleSheet, Alert, Animated } from 'react-native'; // Added Picker
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '@/supabaseClient';
+import ImageUploader from '../Components/ImageUploader';
 
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_URL } from '@/supabaseClient'; // Make sure this is the correct path
-import { useRouter } from 'expo-router';
-
-const router = useRouter();
+interface Project {
+  image: string | null;
+  title: string;
+  description: string;
+}
 
 const ProfileSetup: React.FC = () => {
-  const [name, setName] = useState<string>('');
-  const [contactEmail, setContactEmail] = useState<string>('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [roleId, setRoleId] = useState<number | null>(null); // Store role_id
-  const [roles, setRoles] = useState<{ id: number, name: string }[]>([]); // Store list of roles
-  const [uploading, setUploading] = useState<boolean>(false);
-  const [uploadStatus, setUploadStatus] = useState<string>('');
-  const [publicImageUrl, setPublicImageUrl] = useState<string>('');
-  const scaleAnim = useRef(new Animated.Value(0)).current;
- 
-
-  // Fetch roles from the roles table
-  const fetchRoles = async () => {
-    try {
-      const { data, error } = await supabase.from('roles').select('*');
-      if (error) {
-        throw new Error('Error fetching roles');
-      }
-      setRoles(data || []);
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
-
-  // Fetch auth ID and user email using AsyncStorage and Supabase Auth
-  const fetchUserData = async () => {
-    try {
-      const authId = await AsyncStorage.getItem('authToken');
-      if (authId) {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-          throw new Error('Error fetching user data from Supabase');
-        }
-        if (data?.user) {
-          setContactEmail(data.user.email || '');
-        }
-      } else {
-        throw new Error('Auth ID not found in AsyncStorage');
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [name, setName] = useState<string>('');
+  const [headline, setHeadline] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchRoles(); // Fetch roles on mount
-    fetchUserData(); // Fetch user data on mount
+    const fetchUserData = async () => {
+      try {
+        const authToken = await AsyncStorage.getItem('authToken');
+        if (!authToken) throw new Error('User not authenticated.');
+
+        const { data, error } = await supabase
+          .from('users')
+          .select('email, name, headline, bio, profile_image, projects')
+          .eq('id', authToken)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setEmail(data.email || '');
+          setName(data.name || '');
+          setHeadline(data.headline || '');
+          setBio(data.bio || '');
+          setProfileImage(data.profile_image || null);
+          setProjects(data.projects ? JSON.parse(data.projects) : []);
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
- 
-  const uploadImage = async (): Promise<string | null> => {
-    if (!profileImage) {
-      alert('Please select an image first!');
-      return null;
-    }
-  
-    try {
-      setUploading(true);
-  
-      // Fetch the image file from the local URI
-      const response = await fetch(profileImage);
-      const blob = await response.blob();
-  
-      // Generate a unique file name for the image
-      const fileName = `${Date.now()}_profile_image.jpg`;
-      console.log(fileName);
-  
-      // The correct Supabase storage URL for uploading the image to the 'profile-images' bucket
-      const uploadUrl = `https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/profile-images/public/${fileName}`;
-  
-      // Perform the upload request
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`, // Ensure the correct API key
-          'Content-Type': 'image/jpeg', // Set the content type of the uploaded image
-        },
-        body: blob,
-      });
-  
-      // Check if the upload was successful
-      if (uploadResponse.ok) {
-        setUploadStatus('Image uploaded successfully!');
-  
-        // Construct the public URL for the uploaded image
-        const publicUrl = `https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/profile-images/${fileName}`;
-        console.log('Public URL:', publicUrl);
-        return publicUrl;
-      } else {
-        setUploadStatus('Failed to upload image');
-        console.error('Upload error', uploadResponse.status);
-        return null;
-      }
-    } catch (error) {
-      setUploadStatus('Network error during upload');
-      console.error('Upload error:', error);
-      return null;
-    } finally {
-      setUploading(false);
+  const handleAddProject = () => {
+    setProjects([...projects, { image: null, title: '', description: '' }]);
+  };
+
+  const handlePickImage = async (onUploadCallback: (uri: string) => void) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      onUploadCallback(result.assets[0].uri);
     }
   };
-  
-  
-  
-  const handleProfileSubmit = async () => {
-    if (!name || !contactEmail || !roleId) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-  
+
+  const uploadImagesAndSaveProfile = async () => {
     try {
-      // Upload the image and get the public URL
-      const uploadedImageUrl = await uploadImage();
-  
-      if (!uploadedImageUrl) {
-        Alert.alert('Error', 'Image upload failed. Please try again.');
-        return;
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (!authToken) throw new Error('User not authenticated.');
+
+      let uploadedProfileImage = profileImage;
+
+      // Upload profile image if selected
+      if (profileImage && !profileImage.startsWith('https://')) {
+        uploadedProfileImage = await ImageUploader.upload(profileImage, 'profile-pics');
       }
-  
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        throw new Error('User not authenticated');
-      }
-  
-      const user = data?.user;
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-  
-      // Insert or update the user profile details in the 'users' table
-      const { error: dbError } = await supabase
-        .from('users')
-        .upsert({
-          id: user.id,
-          name,
-          contact_email: contactEmail,
-          role_id: roleId,
-          profile_image: uploadedImageUrl, // Use the returned public URL
-        });
-  
-      if (dbError) throw dbError;
-  
-      Alert.alert('Profile Setup Successful');
-      router.push('/home'); // Navigate to the home screen after profile setup
+
+      // Upload project images
+      const uploadedProjects = await Promise.all(
+        projects.map(async (project) => {
+          let uploadedImage = project.image;
+
+          if (project.image && !project.image.startsWith('https://')) {
+            uploadedImage = await ImageUploader.upload(project.image, 'project-images');
+          }
+
+          return {
+            ...project,
+            image: uploadedImage,
+          };
+        })
+      );
+
+      // Save profile data to Supabase
+      const { error } = await supabase.from('users').upsert({
+        id: authToken,
+        name,
+        headline,
+        bio,
+        profile_image: uploadedProfileImage,
+        email,
+        projects: JSON.stringify(uploadedProjects),
+      });
+
+      if (error) throw error;
+
+      Alert.alert('Success', 'Profile updated successfully!');
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
   };
-  
-  
-  
 
-  const handleImagePick = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-      });
-  
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      console.log(result.assets[0].uri);
-      setProfileImage(result.assets[0].uri); // Store the image URI
-    } else {
-      Alert.alert('Error', 'Image selection was canceled');
-    }
-  };
-  
-  
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile Setup</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Setup Your Profile</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Contact Email"
-        value={contactEmail}
-        onChangeText={setContactEmail}
-        editable={false} // Prevent manual editing since email is fetched from Supabase
-      />
-      
-      {/* Profile Image */}
-      <Button title="Pick a Profile Image" onPress={handleImagePick} />
-    
+      <View style={styles.section}>
+        <Text style={styles.label}>Profile Picture</Text>
+        <TouchableOpacity
+          style={styles.imagePicker}
+          onPress={() =>
+            handlePickImage((uri) => setProfileImage(uri))
+          }
+        >
+          {profileImage ? (
+            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          ) : (
+            <Text style={styles.imagePickerText}>Pick a Profile Picture</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
-      {/* Role Selection (Dropdown) */}
-      <Text>Select Role:</Text>
-      <Picker
-        selectedValue={roleId}
-        onValueChange={(itemValue : any) => setRoleId(itemValue)}
-      >
-        {roles.map(role => (
-          <Picker.Item key={role.id} label={role.name} value={role.id} />
+      <View style={styles.section}>
+        <Text style={styles.label}>Name</Text>
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Enter your name"
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Email</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          editable={false}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Headline</Text>
+        <TextInput
+          style={styles.input}
+          value={headline}
+          onChangeText={setHeadline}
+          placeholder="Add a professional headline"
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Bio</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={bio}
+          onChangeText={setBio}
+          placeholder="Write a short bio"
+          multiline
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Projects</Text>
+        {projects.map((project, index) => (
+          <View key={index} style={styles.projectContainer}>
+            <TouchableOpacity
+              style={styles.imagePicker}
+              onPress={() =>
+                handlePickImage((uri) => {
+                  const updatedProjects = [...projects];
+                  updatedProjects[index].image = uri;
+                  setProjects(updatedProjects);
+                })
+              }
+            >
+              {project.image ? (
+                <Image source={{ uri: project.image }} style={styles.projectImage} />
+              ) : (
+                <Text style={styles.imagePickerText}>Pick Project Image</Text>
+              )}
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              value={project.title}
+              onChangeText={(text) => {
+                const updatedProjects = [...projects];
+                updatedProjects[index].title = text;
+                setProjects(updatedProjects);
+              }}
+              placeholder="Project Title"
+            />
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={project.description}
+              onChangeText={(text) => {
+                const updatedProjects = [...projects];
+                updatedProjects[index].description = text;
+                setProjects(updatedProjects);
+              }}
+              placeholder="Project Description"
+              multiline
+            />
+          </View>
         ))}
-      </Picker>
-      {profileImage && (
-  <Image
-    source={{ uri: profileImage }}
-    style={{ width: 100, height: 100, borderRadius: 50 }}
-  />
-)}
+        <TouchableOpacity style={styles.addButton} onPress={handleAddProject}>
+          <Text style={styles.addButtonText}>Add Project</Text>
+        </TouchableOpacity>
+      </View>
 
-      <Button title="Save Profile" onPress={handleProfileSubmit} />
-      {uploading && <Text>Uploading...</Text>}
-      {uploadStatus && <Text>{uploadStatus}</Text>}
-    </View>
+      <TouchableOpacity style={styles.saveButton} onPress={uploadImagesAndSaveProfile}>
+        <Text style={styles.saveButtonText}>Save Profile</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 16 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 8, marginBottom: 16, borderRadius: 4 },
-  profileImage: { width: 100, height: 100, borderRadius: 50, marginTop: 16, marginBottom: 16 },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  container: {
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  imagePicker: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 150,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  imagePickerText: {
+    color: '#999',
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  projectContainer: {
+    marginBottom: 16,
+  },
+  projectImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  addButton: {
+    backgroundColor: '#007bff',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+  },
+  saveButton: {
+    backgroundColor: '#28a745',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 export default ProfileSetup;

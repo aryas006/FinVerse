@@ -9,10 +9,10 @@ const UserProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  
-    const handleeditNav = () => {
-      router.push('/Profile/profileSetup'); // Replace '/profile' with your actual profile page route
-    };
+
+  const handleEditNav = () => {
+    router.push('/Profile/profileSetup'); // Replace with your actual profile setup page route
+  };
 
   const fetchUserData = async () => {
     try {
@@ -51,14 +51,6 @@ const UserProfile: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text>Error loading profile. Please try again later.</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <Image 
@@ -67,36 +59,36 @@ const UserProfile: React.FC = () => {
       />
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
-          <Image 
-            source={
-              user.profile_image
-                ? { uri: user.profile_image }
-                : require('../../assets/images/pp.jpg') // Default profile image
-            }
-            style={styles.profileImage} 
+          <Image
+            source={{
+              uri: user?.profile_image || 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png',
+            }}
+            style={styles.profileImage}
           />
         </View>
-        <TouchableOpacity onPress={handleeditNav} style={styles.connectButton}>
+        <TouchableOpacity onPress={handleEditNav} style={styles.connectButton}>
           <Text style={styles.connectButtonText}>Edit</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.userInfo}>
-        <Text style={styles.name}>{user.full_name}</Text>
-        <Text style={styles.joined}>Joined {user.joined_at}</Text>
-        <Text style={styles.bio}>{user.bio}</Text>
+        {user?.full_name && <Text style={styles.name}>{user.full_name}</Text>}
+        {user?.created_at && <Text style={styles.joined}>Joined {user.created_at}</Text>}
+        {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
       </View>
       <View style={styles.projects}>
         <Text style={styles.projectsTitle}>Projects</Text>
-        {user.projects && user.projects.length > 0 ? (
+        {user?.projects && user.projects.length > 0 ? (
           user.projects.map((project: any, index: number) => (
             <View key={index} style={styles.projectContainer}>
-              <Image 
-                source={{ uri: project.image }} 
-                style={styles.projectImage} 
-              />
+              {project.image && (
+                <Image
+                  source={{ uri: project.image }}
+                  style={styles.projectImage}
+                />
+              )}
               <View style={styles.projectInfo}>
-                <Text style={styles.projectName}>{project.title}</Text>
-                <Text style={styles.projectDescription}>{project.description}</Text>
+                {project.title && <Text style={styles.projectName}>{project.title}</Text>}
+                {project.description && <Text style={styles.projectDescription}>{project.description}</Text>}
               </View>
             </View>
           ))
@@ -195,11 +187,6 @@ const styles = StyleSheet.create({
     color: 'gray',
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

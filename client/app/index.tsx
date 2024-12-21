@@ -6,10 +6,10 @@ import BottomNav from './Components/BottomNav';
 const Index = () => {
     return (
         <View style={styles.container}>
-            <Link href="/auth/Login" style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            <Link href="/Feed/home" style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
             </Link>
-            <BottomNav></BottomNav>
+
         </View>
     );
 }
@@ -22,5 +22,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    
+
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, View, ActivityIndicator, Text, Image } from 'react-native';
 import { supabase } from '@/supabaseClient';
 import PostItem from '../Components/posts';
+import BottomNav from '../Components/BottomNav';
 
 const FeedPage = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -38,47 +39,50 @@ const FeedPage = () => {
   }
 
   return (
-    <ScrollView>
-      <View style={styles.topNavBar}>
+    <View>
+      <ScrollView>
+        <View style={styles.topNavBar}>
           <Text style={styles.header}>Home</Text>
-          <Image 
-              source={require('../../assets/images/pp.jpg')}
-              style={styles.profileIcon}
+          <Image
+            source={require('../../assets/images/pp.jpg')}
+            style={styles.profileIcon}
           />
-      </View>
-      <ScrollView contentContainerStyle={styles.feedContainer}>
-        {posts.length === 0 ? (
-          <Text>No posts available</Text>
-        ) : (
-          posts.map((post: any) => (
-            <PostItem
-              key={post.id}
-              profileImage={post.profile_image}
-              userName={post.user_id}
-              content={post.content}
-              postImage={post.image_url}
-              createdAt={post.created_at}
-              likes={post.likes || 0}
-              comments={post.comments || 0}
-            />
-          ))
-        )}
+        </View>
+        <ScrollView contentContainerStyle={styles.feedContainer}>
+          {posts.length === 0 ? (
+            <Text>No posts available</Text>
+          ) : (
+            posts.map((post: any) => (
+              <PostItem
+                key={post.id}
+                profileImage={post.profile_image}
+                userName={post.user_id}
+                content={post.content}
+                postImage={post.image_url}
+                createdAt={post.created_at}
+                likes={post.likes || 0}
+                comments={post.comments || 0}
+              />
+            ))
+          )}
+        </ScrollView>
       </ScrollView>
-    </ScrollView>
+      <BottomNav></BottomNav>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     fontSize: 32,
-  //   fontWeight: 'bold',
+    //   fontWeight: 'bold',
     marginTop: 20,
     fontFamily: 'Raleway-Regular'
   },
   profileIcon: {
-      height: 40,
-      width: 40,
-      borderRadius: 100
+    height: 40,
+    width: 40,
+    borderRadius: 100
   },
   topNavBar: {
     flexDirection: "row",
@@ -86,7 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-end",
     paddingHorizontal: 28
-},
+  },
   feedContainer: {
     padding: 15,
   },

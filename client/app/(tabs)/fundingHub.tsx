@@ -1,7 +1,29 @@
 import { StyleSheet, Text, View, FlatList, Image, Pressable, Animated } from 'react-native';
 import React, { useState, useRef } from 'react';
-import { Link, NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+import { Link } from 'expo-router';
+import BottomNav from '../Components/BottomNav';
 
+
+type StartupType = {
+    id: string;
+    name: string;
+    description: string;
+    image: string;
+    status: string;
+    raised: string;
+    industry: string;
+    upvotes: number;
+    isUpvoted: boolean;
+};
+
+type RootStackParamList = {
+    StartupList: undefined;
+    StartupDetail: { startup: StartupType };
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
 
 const FundingHub = () => {
     const [startups, setStartups] = useState([
@@ -149,44 +171,57 @@ const FundingHub = () => {
             </Animated.View>
         );
     };
-
+    const navigation = useNavigation();
     const renderStartup = ({ item }: { item: any }) => (
-        <View style={styles.startupContainer}>
+        <Link href={{
+            pathname: '/startup/[id]',
+            params: {
+                id: item,
+                image: item.image,
+                name: item.name,
+                description: item.description,
+                status: item.status,
+                raised: item.raised,
+                industry: item.industry,
+                upvotes: item.upvotes,
+                isUpvoted: item.isUpvoted
+            },
+        }}>
+            <View style={styles.startupContainer}>
+                <View>
+                    <Image source={{ uri: item.image }} style={styles.startupImage} />
 
-
-            <View>
-                <Image source={{ uri: item.image }} style={styles.startupImage} />
-
-                <View style={styles.upvoteContainer}>
-                    <UpvoteButton
-                        count={item.upvotes}
-                        isUpvoted={item.isUpvoted}
-                        onPress={() => handleUpvote(item.id)}
-                    />
-                </View>
-
-            </View>
-
-            <View style={styles.startupDetails}>
-                <View style={styles.startupHeader}>
-                    <Text style={styles.startupName}>{item.name}</Text>
-                    {renderStatusBadge(item.status)}
-                </View>
-                <Text style={styles.startupDescription}>{item.description}</Text>
-                <View style={styles.startupMetrics}>
-                    <View style={styles.metric}>
-                        <Text style={styles.metricLabel}>Raised</Text>
-                        <Text style={styles.metricValue}>{item.raised}</Text>
-                    </View>
-                    <View style={styles.metric}>
-                        <Text style={styles.metricLabel}>Industry</Text>
-                        <Text style={styles.metricValue}>{item.industry}</Text>
+                    <View style={styles.upvoteContainer}>
+                        <UpvoteButton
+                            count={item.upvotes}
+                            isUpvoted={item.isUpvoted}
+                            onPress={() => handleUpvote(item.id)}
+                        />
                     </View>
 
+                </View>
 
+                <View style={styles.startupDetails}>
+                    <View style={styles.startupHeader}>
+                        <Text style={styles.startupName}>{item.name}</Text>
+                        {renderStatusBadge(item.status)}
+                    </View>
+                    <Text style={styles.startupDescription}>{item.description}</Text>
+                    <View style={styles.startupMetrics}>
+                        <View style={styles.metric}>
+                            <Text style={styles.metricLabel}>Raised</Text>
+                            <Text style={styles.metricValue}>{item.raised}</Text>
+                        </View>
+                        <View style={styles.metric}>
+                            <Text style={styles.metricLabel}>Industry</Text>
+                            <Text style={styles.metricValue}>{item.industry}</Text>
+                        </View>
+
+
+                    </View>
                 </View>
             </View>
-        </View>
+        </Link>
     );
 
     return (
@@ -200,7 +235,6 @@ const FundingHub = () => {
                 <Text style={styles.sectionTitle}>Top Startups</Text>
                 <Text style={styles.subTitle}>Trending in the ecosystem</Text>
             </View>
-
             <FlatList
                 data={startups}
                 renderItem={renderStartup}
@@ -209,6 +243,7 @@ const FundingHub = () => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContainer}
             />
+            <BottomNav></BottomNav>
         </View>
     );
 };

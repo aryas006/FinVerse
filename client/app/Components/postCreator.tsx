@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity, Modal, KeyboardAvoidingView, Keyboard, Platform, Image } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import ImageUploader from './ImageUploader'; // Import the ImageUploader component
-import { supabase } from '@/supabaseClient'; // your client
+import { useNavigation } from '@react-navigation/native';
 
-const CreatePost = () => {
+const CreatePostOrEvent = () => {
   const [content, setContent] = useState('');
-  const [userId, setUserId] = useState(''); // User ID, empty = anonymous
+  const [isEvent, setIsEvent] = useState(false);
+  const [modalVisible, setModalVisible] = useState(true);
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [schedules, setSchedules] = useState<string[]>(['']);
+  const [eventDate, setEventDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Function to pick an image from the gallery
+  const navigation = useNavigation();
+
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -25,84 +30,309 @@ const CreatePost = () => {
 
     if (!result.canceled && result.assets) {
       setImageUri(result.assets[0].uri);
+      setExpanded(true);
     }
   };
 
-  // Function to post the content and image URL to Supabase
-  const postToSupabase = async () => {
-    if (!content.trim()) {
-      Alert.alert('Error', 'Content cannot be empty!');
-      return;
-    }
+  const addScheduleBox = () => {
+    setSchedules([...schedules, '']);
+  };
 
-    const user = userId || 'anonymous'; // Default to anonymous if no user ID
+  const removeScheduleBox = (index: number) => {
+    const updatedSchedules = schedules.filter((_, i) => i !== index);
+    setSchedules(updatedSchedules);
+  };
 
-    // Insert the post into the 'posts' table
-    const { error } = await supabase
-      .from('posts')
-      .insert([
-        { user_id: user, content, image_url: imageUrl }
-      ]);
+  const updateSchedule = (index: number, value: string) => {
+    const updatedSchedules = [...schedules];
+    updatedSchedules[index] = value;
+    setSchedules(updatedSchedules);
+  };
 
-    if (error) {
-      Alert.alert('Error', error.message);
-    } else {
-      Alert.alert('Success', 'Post created successfully!');
-      setContent('');
-      setImageUri(null);
-      setImageUrl(null);
-    }
+  const handleOutsideClick = () => {
+    Alert.alert('Discard Upload?', 'Are you sure you want to discard the upload?', [
+      {
+        text: 'Yes',
+        onPress: () => navigation.goBack(),
+      },
+      {
+        text: 'No',
+        style: 'cancel',
+      },
+    ]);
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="What's on your mind?"
-        multiline
-        value={content}
-        onChangeText={setContent}
-      />
+    <Modal
+      visible={modalVisible}
+      animationType="slide"
+      transparent
+      onRequestClose={handleOutsideClick}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.modalBackground}
+      >
+        <TouchableOpacity
+          style={styles.modalBackground}
+          onPress={handleOutsideClick}
+          activeOpacity={1}
+        >
+          <View style={[styles.modalContainer, expanded ? styles.expandedContainer : styles.reducedContainer]}>
+            <TouchableOpacity
+              activeOpacity={1}
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              {!expanded ? (
+                <View style={styles.iconContainer}>
+                  <TouchableOpacity
+                    style={[styles.iconButton, styles.largeButton, { backgroundColor: 'rgba(255, 255, 255, 0.5)' }]}
+                    onPress={() => {
+                      setIsEvent(false);
+                      pickImage();
+                    }}
+                  >
+                    <Text style={[styles.plusSign, { color: 'green' }]}>+</Text>
+                    <Text style={styles.iconText}>Add Post</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.iconButton, styles.largeButton, { backgroundColor: 'rgba(255, 255, 255, 0.5)' }]}
+                    onPress={() => {
+                      setIsEvent(true);
+                      setExpanded(true);
+                    }}
+                  >
+                    <Text style={[styles.plusSign, { color: 'green' }]}>+</Text>
+                    <Text style={styles.iconText}>Add Event</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  {imageUri && !isEvent && (
+                    <View style={styles.imagePreviewContainer}>
+                      <Image source={{ uri: imageUri }} style={styles.largeImagePreview} />
+                    </View>
+                  )}
 
-      <TextInput
-        style={styles.input}
-        placeholder="User ID (Optional)"
-        value={userId}
-        onChangeText={setUserId}
-      />
+                  <View style={styles.descriptionContainer}>
+                    <Text style={styles.label}>Description</Text>
+                    <TextInput
+                      style={[styles.inputLarge, { height: isEvent ? 80 : 60 }]}
+                      placeholder={isEvent ? 'Add event description...' : 'Write your post description...'}
+                      multiline
+                      value={content}
+                      onChangeText={setContent}
+                    />
+                  </View>
 
-      <TouchableOpacity onPress={pickImage} style={styles.button}>
-        <Button title="Pick an Image" onPress={pickImage} />
-      </TouchableOpacity>
+                  {isEvent && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => setShowDatePicker(true)}
+                        style={styles.datePickerButton}
+                      >
+                        <Text style={styles.datePickerText}>{
+                          eventDate
+                            ? `Event Date: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString()}`
+                            : 'Select Event Date'
+                        }</Text>
+                      </TouchableOpacity>
 
-      {imageUri && (
-        <ImageUploader
-          type="posts"
-          imageUri={imageUri}
-          onUpload={(url) => setImageUrl(url)} // Get the image URL after upload
-        />
-      )}
+                      {showDatePicker && (
+                        <DateTimePicker
+                          value={eventDate || new Date()}
+                          mode="datetime"
+                          display="spinner"
+                          textColor="black"
+                          onChange={(event, selectedDate) => {
+                            setShowDatePicker(false);
+                            if (selectedDate) setEventDate(selectedDate);
+                          }}
+                        />
+                      )}
 
-      <Button title="Post" onPress={postToSupabase} />
-    </View>
+                      {schedules.map((schedule, index) => (
+                        <View key={index} style={styles.scheduleRow}>
+                          <Text style={styles.label}>Schedule {index + 1}</Text>
+                          <TextInput
+                            style={styles.inputLarge}
+                            placeholder={`Enter details for Schedule ${index + 1}`}
+                            value={schedule}
+                            onChangeText={(value) => updateSchedule(index, value)}
+                          />
+                          <TouchableOpacity
+                            style={styles.removeScheduleButton}
+                            onPress={() => removeScheduleBox(index)}
+                          >
+                            <Text style={styles.buttonText}>X</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+
+                      <TouchableOpacity style={styles.addScheduleButton} onPress={addScheduleBox}>
+                        <Text style={[styles.buttonText, { color: 'black' }]}>Add Schedule</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.postButton}
+                    onPress={() => {
+                      Alert.alert('Success', `${isEvent ? 'Event' : 'Post'} created successfully!`);
+                      setExpanded(false);
+                      setSchedules(['']);
+                      setImageUri(null);
+                      setEventDate(null);
+                    }}
+                  >
+                    <Text style={styles.buttonText}>{isEvent ? 'Post Event' : 'Post'}</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  modalBackground: {
     flex: 1,
-    padding: 16,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  expandedContainer: {
+    minHeight: '70%',
+  },
+  reducedContainer: {
+    minHeight: '40%',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  iconButton: {
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  largeButton: {
+    width: '45%',
+    aspectRatio: 1,
+  },
+  plusSign: {
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+  iconText: {
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  inputLarge: {
+    borderColor: '#ddd',
     borderWidth: 1,
+    padding: 10,
+    borderRadius: 8,
+    fontSize: 16,
     marginBottom: 16,
-    padding: 8,
+    backgroundColor: '#f9f9f9',
   },
-  button: {
+  datePickerButton: {
+    padding: 12,
+    backgroundColor: '#E8F0FE',
+    borderRadius: 10,
     marginBottom: 16,
+    alignItems: 'center',
+  },
+  datePickerText: {
+    color: '#333',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  imagePreviewContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  largeImagePreview: {
+    width: 180,
+    height: 180,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  removeScheduleButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    marginLeft: 10,
+  },
+  addScheduleButton: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  postButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  descriptionContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
   },
 });
 
-export default CreatePost;
+export default CreatePostOrEvent;

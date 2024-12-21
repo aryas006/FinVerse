@@ -1,27 +1,57 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-
-interface User {
-    name: string;
-    joined: string;
-    role: string;
-    projects: string[];
-    bio: string;
-    // profileImage: string; 
-    // backgroundImage: string; 
-  }
-  
-  const user: User = {
-    name: "John Doe",
-    joined: "2023-11-15",
-    role: "Software Engineer",
-    projects: ["Project A", "Project B"],
-    bio: "I am a passionate software engineer with a focus on..."
-    // profileImage: "path/to/profile/image.jpg", 
-    // backgroundImage: "path/to/background/image.jpg" 
-  };
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/supabaseClient';
 
 const UserProfile: React.FC = () => {
+  const [user, setUser] = useState<any>(null); // Holds user data
+  const [loading, setLoading] = useState(true);
+
+  const fetchUserData = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem('authToken'); // Retrieve authToken from AsyncStorage
+      if (!authToken) throw new Error('User not authenticated.');
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, full_name, bio, created_at, projects, profile_image')
+        .eq('user_id', authToken)
+        .single();
+
+      if (error) throw error;
+
+      // Parse the projects JSON string into a JavaScript array
+      const projects = data.projects ? JSON.parse(data.projects) : [];
+
+      setUser({ ...data, projects }); // Update user state with parsed projects
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoading(false); // Stop loading spinner
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Loading User Profile...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>Error loading profile. Please try again later.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Image 
@@ -31,7 +61,11 @@ const UserProfile: React.FC = () => {
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
           <Image 
-            source={require('../../assets/images/pp.jpg')} 
+            source={
+              user.profile_image
+                ? { uri: user.profile_image }
+                : require('../../assets/images/pp.jpg') // Default profile image
+            }
             style={styles.profileImage} 
           />
         </View>
@@ -40,27 +74,29 @@ const UserProfile: React.FC = () => {
         </TouchableOpacity>
       </View>
       <View style={styles.userInfo}>
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.joined}>Joined {user.joined}</Text>
-          <Text style={styles.bio}>{user.bio}</Text>
-       </View>
+        <Text style={styles.name}>{user.full_name}</Text>
+        <Text style={styles.joined}>Joined {user.joined_at}</Text>
+        <Text style={styles.bio}>{user.bio}</Text>
+      </View>
       <View style={styles.projects}>
         <Text style={styles.projectsTitle}>Projects</Text>
-        {user.projects.map((project, index) => (
-          <View key={index} style={styles.projectContainer}>
-            <Image 
-              source={require('../../assets/images/company.png')} // Replace with actual project image
-              style={styles.projectImage} 
-            />
-            <View style={styles.projectInfo}>
-              <Text style={styles.projectName}>{project}</Text>
-              <Text style={styles.projectDescription}>Brief description of the project.</Text> 
+        {user.projects && user.projects.length > 0 ? (
+          user.projects.map((project: any, index: number) => (
+            <View key={index} style={styles.projectContainer}>
+              <Image 
+                source={{ uri: project.image }} 
+                style={styles.projectImage} 
+              />
+              <View style={styles.projectInfo}>
+                <Text style={styles.projectName}>{project.title}</Text>
+                <Text style={styles.projectDescription}>{project.description}</Text>
+              </View>
             </View>
-          </View>
-        ))}
+          ))
+        ) : (
+          <Text>No projects available.</Text>
+        )}
       </View>
-
-      {/* Add Posts section here */}
     </View>
   );
 };
@@ -72,34 +108,31 @@ const styles = StyleSheet.create({
   backgroundImage: {
     position: 'absolute',
     height: '25%',
-    width : '100%', 
+    width: '100%', 
     resizeMode: 'cover', 
-},
+  },
   header: {
     marginTop: '40%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    
   },
   profileImageContainer: {
-    marginLeft : 20,
+    marginLeft: 20,
     width: 130,
     height: 130,
-    borderRadius: 14, // Adjust radius as needed
-    borderWidth: 5, // Set border width
-    borderColor: 'white', // Set border color
-    overflow: 'hidden', 
-    backgroundColor: 'white', 
-  
-  
+    borderRadius: 14,
+    borderWidth: 5,
+    borderColor: 'white',
+    overflow: 'hidden',
+    backgroundColor: 'white',
   },
   profileImage: {
     width: '100%',
     height: '100%',
   },
   userInfo: {
-    marginTop:15,
+    marginTop: 15,
     marginLeft: 20,
   },
   name: {
@@ -115,8 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   connectButton: {
-    
-    marginRight : 20,
+    marginRight: 20,
     backgroundColor: 'grey',
     padding: 10,
     borderRadius: 35,
@@ -154,6 +186,16 @@ const styles = StyleSheet.create({
   projectDescription: {
     fontSize: 14,
     color: 'gray',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

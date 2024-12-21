@@ -7,13 +7,13 @@ import {
   ScrollView,
   StyleSheet,
   Image,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/supabaseClient';
-import ImageUploader from '../Components/ImageUploader';
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system';
 
 interface Project {
   image: string | null;
@@ -52,8 +52,8 @@ const ProfileSetup: React.FC = () => {
           setProfileImage(data.profile_image || null);
           setProjects(data.projects ? JSON.parse(data.projects) : []);
         }
-      } catch (error: any) {
-        Alert.alert('Error', error.message);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
       } finally {
         setLoading(false);
       }
@@ -79,6 +79,37 @@ const ProfileSetup: React.FC = () => {
     }
   };
 
+  const uploadImage = async (uri: string, type: 'profile-pic' | 'posts') => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const fileName = `${type}/${Date.now()}.jpg`; // Creating a file name based on the timestamp
+      const contentType = 'image/jpeg'; // Assuming the image is jpeg
+
+      const { data, error } = await supabase.storage
+        .from(type === 'profile-pic' ? 'profile-images' : 'posts')
+        .upload(fileName, decode(base64), {
+          contentType: contentType,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from(type === 'profile-pic' ? 'profile-images' : 'posts')
+        .getPublicUrl(fileName);
+
+      if (publicUrlData?.publicUrl) {
+        return publicUrlData.publicUrl;
+      } else {
+        throw new Error('Failed to fetch public URL.');
+      }
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      return uri; // Return the URI as a fallback
+    }
+  };
+
   const uploadImagesAndSaveProfile = async () => {
     try {
       const authToken = await AsyncStorage.getItem('authToken');
@@ -88,7 +119,7 @@ const ProfileSetup: React.FC = () => {
 
       // Upload profile image if selected
       if (profileImage && !profileImage.startsWith('https://')) {
-        uploadedProfileImage = await ImageUploader.upload(profileImage, 'profile-pics');
+        uploadedProfileImage = await uploadImage(profileImage, 'profile-pic');
       }
 
       // Upload project images
@@ -97,7 +128,7 @@ const ProfileSetup: React.FC = () => {
           let uploadedImage = project.image;
 
           if (project.image && !project.image.startsWith('https://')) {
-            uploadedImage = await ImageUploader.upload(project.image, 'project-images');
+            uploadedImage = await uploadImage(project.image, 'posts');
           }
 
           return {
@@ -120,9 +151,9 @@ const ProfileSetup: React.FC = () => {
 
       if (error) throw error;
 
-      Alert.alert('Success', 'Profile updated successfully!');
+      console.log('Profile updated successfully!');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Error uploading images or saving profile:', error);
     }
   };
 
@@ -142,9 +173,7 @@ const ProfileSetup: React.FC = () => {
         <Text style={styles.label}>Profile Picture</Text>
         <TouchableOpacity
           style={styles.imagePicker}
-          onPress={() =>
-            handlePickImage((uri) => setProfileImage(uri))
-          }
+          onPress={() => handlePickImage((uri) => setProfileImage(uri))}
         >
           {profileImage ? (
             <Image source={{ uri: profileImage }} style={styles.profileImage} />
@@ -257,78 +286,78 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 16,
-    backgroundColor: '#fff',
+    flexGrow: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 24,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 10,
     fontSize: 16,
   },
   textArea: {
-    height: 80,
-    textAlignVertical: 'top',
+    height: 100,
   },
   imagePicker: {
-    alignItems: 'center',
+    width: 200,
+    height: 200,
+    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
-    height: 150,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    alignItems: 'center',
     marginBottom: 16,
   },
   imagePickerText: {
-    color: '#999',
+    color: '#007bff',
+    fontSize: 16,
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
   },
   projectContainer: {
     marginBottom: 16,
   },
   projectImage: {
-    width: '100%',
+    width: 150,
     height: 150,
-    borderRadius: 8,
-    marginBottom: 8,
+    resizeMode: 'contain',
   },
   addButton: {
     backgroundColor: '#007bff',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    padding: 10,
+    borderRadius: 4,
+    marginTop: 16,
   },
   addButtonText: {
     color: '#fff',
-    fontWeight: '500',
+    fontSize: 16,
+    textAlign: 'center',
   },
   saveButton: {
     backgroundColor: '#28a745',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
+    padding: 12,
+    borderRadius: 4,
+    marginTop: 24,
   },
   saveButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    textAlign: 'center',
   },
 });
 

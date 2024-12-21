@@ -6,7 +6,7 @@ import { supabase } from '@/supabaseClient';
 
 type ImageUploaderProps = {
   type: 'profile-pic' | 'posts'; // Type of image to upload
-  imageUri: string; // URI of the image to upload
+  imageUri: string | null; // URI of the image to upload
   onUpload: (url: string) => void; // Callback to return the uploaded image URL
 };
 
@@ -63,7 +63,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ type, imageUri, onUpload 
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: imageUri }} style={styles.image} />
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={styles.image} />
+      ) : (
+        <View style={styles.placeholder}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      )}
       {isUploading ? (
         <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
       ) : null}
@@ -85,6 +91,14 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   loader: {
+    marginVertical: 16,
+  },
+  placeholder: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
     marginVertical: 16,
   },
 });

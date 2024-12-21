@@ -166,12 +166,38 @@ const CreatePostOrEvent = () => {
 
                         <View key={index} style={styles.scheduleRow}>
                           {/* <Text style={styles.label}>Schedule {index + 1}</Text> */}
+                          <View style={{flexDirection:'column'}}>
                           <TextInput
                             style={styles.inputSchedule}
                             placeholder={`Enter details for Schedule ${index + 1}`}
                             value={schedule}
                             onChangeText={(value) => updateSchedule(index, value)}
                           />
+                          <TouchableOpacity
+                        onPress={() => setShowDatePicker(true)}
+                        style={styles.datePickerButton}
+                      >
+                        <Text style={styles.datePickerText}>{
+                          eventDate
+                            ? ` Date: ${eventDate.toDateString()} ${eventDate.toLocaleTimeString()}`
+                            : 'Select Event Date'
+                        }</Text>
+                      </TouchableOpacity>
+
+                      {showDatePicker && (
+                        <DateTimePicker
+                          value={eventDate || new Date()}
+                          mode="datetime"
+                          display="spinner"
+                          textColor="black"
+                          onChange={(event, selectedDate) => {
+                            setShowDatePicker(false);
+                            if (selectedDate) setEventDate(selectedDate);
+                          }}
+                        />
+                      )}
+                          </View>
+                        
                           <TouchableOpacity
                             style={styles.removeScheduleButton}
                             onPress={() => removeScheduleBox(index)}

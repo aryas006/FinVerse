@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import BottomNav from '../Components/BottomNav';
+import { router } from 'expo-router';
 
 interface Event {
   id: string;
@@ -204,7 +205,7 @@ const Discover = () => {
               <TouchableOpacity
                 key={event.id}
                 style={styles.eventItem}
-                onPress={() => alert(`Clicked on ${event.title}`)}
+                onPress={() => router.push(`/business/${event.id}`)}
               >
                 <Image
                     source={
@@ -237,7 +238,7 @@ const Discover = () => {
         {groupedStartUps.map((column, columnIndex) => (
           <View key={`column-${columnIndex}`} style={styles.startupMapper}>
             {column.map((startup) => (
-              <View key={startup.id} style={styles.startupItem}>
+              <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => router.push(`/business/${startup.id}`)}>
                 <Image
                     source={
                         typeof startup.image === 'string'
@@ -251,7 +252,7 @@ const Discover = () => {
                   <Text style={styles.startupName}>{startup.name}</Text>
                   <Text style={styles.startupDescription}>{startup.description}</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         ))}

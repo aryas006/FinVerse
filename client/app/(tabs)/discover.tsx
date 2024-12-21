@@ -7,9 +7,12 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ImageSourcePropType,
 } from 'react-native';
 import BottomNav from '../Components/BottomNav';
 import { router } from 'expo-router';
+import { supabase } from '@/supabaseClient';
+// import { fetchStartups } from '../Components/FetchStartups';
 
 interface Event {
   id: string;
@@ -72,56 +75,56 @@ const events: Event[] = [
   },
 ];
 
-const startups: Startup[] = [
-  {
-    id: '1',
-    image: require('../../assets/images/st_a.png'),
-    name: 'Bayrack',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-    creator: 'Arya',
-  },
-  {
-    id: '2',
-    image: require('../../assets/images/st_b.png'),
-    name: 'Kite',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-    creator: 'Zerodha',
-  },
-  {
-    id: '3',
-    image: require('../../assets/images/event_icon_b.png'),
-    name: '1px',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-    creator: 'Arya',
-  },
-  {
-    id: '4',
-    image: require('../../assets/images/event_b.png'),
-    name: 'RedChillies',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-    creator: 'SRK',
-  },
-  {
-    id: '5',
-    image: require('../../assets/images/event_icon_b.png'),
-    name: 'MCA',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-    creator: 'Parth',
-  },
-  {
-    id: '6',
-    image: require('../../assets/images/st_b.png'),
-    name: 'Cwrazy Club',
-    description:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-    creator: 'Praju',
-  },
-];
+// const startups: Startup[] = [
+//   {
+//     id: '1',
+//     image: require('../../assets/images/st_a.png'),
+//     name: 'Bayrack',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
+//     creator: 'Arya',
+//   },
+//   {
+//     id: '2',
+//     image: require('../../assets/images/st_b.png'),
+//     name: 'Kite',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
+//     creator: 'Zerodha',
+//   },
+//   {
+//     id: '3',
+//     image: require('../../assets/images/event_icon_b.png'),
+//     name: '1px',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
+//     creator: 'Arya',
+//   },
+//   {
+//     id: '4',
+//     image: require('../../assets/images/event_b.png'),
+//     name: 'RedChillies',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
+//     creator: 'SRK',
+//   },
+//   {
+//     id: '5',
+//     image: require('../../assets/images/event_icon_b.png'),
+//     name: 'MCA',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
+//     creator: 'Parth',
+//   },
+//   {
+//     id: '6',
+//     image: require('../../assets/images/st_b.png'),
+//     name: 'Cwrazy Club',
+//     description:
+//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
+//     creator: 'Praju',
+//   },
+// ];
 
 const groupEvents = (data: Event[], itemsPerColumn: number) => {
   const columns: Event[][] = [];
@@ -139,8 +142,45 @@ const groupStartups = (data: Startup[], itemsPerColumn: number) => {
   return columns;
 };
 
+const fetchStartups = async (): Promise<Startup[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('startups')
+      .select('id, name, description, logo, team');
+
+    if (error) {
+      console.error('Error fetching startups:', error);
+      return [];
+    }
+
+    // Map the fetched data to match the Startup interface
+    return data.map((startup: any) => ({
+      id: startup.id.toString(),
+      image: startup.logo, // Use logo URL from Supabase table
+      name: startup.name,
+      description: startup.description,
+      creator: startup.team?.[0]?.name || 'Unknown', // Access the first team member's name if available
+    }));
+  } catch (err) {
+    console.error('Unexpected error:', err);
+    return [];
+  }
+};
+
+
 const Discover = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false); // Moved inside the component
+
+  const [startups, setStartups] = useState<Startup[]>([]); // Dynamically fetched startups
+
+  useEffect(() => {
+    const getStartups = async () => {
+      const fetchedStartups = await fetchStartups();
+      setStartups(fetchedStartups);
+    };
+
+    getStartups();
+  }, []);
 
   useEffect(() => {
     async function loadFonts() {
@@ -240,12 +280,8 @@ const Discover = () => {
             {column.map((startup) => (
               <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => router.push(`/business/${startup.id}`)}>
                 <Image
-                    source={
-                        typeof startup.image === 'string'
-                        ? { uri: startup.image } // Handle remote images
-                        : startup.image // Handle local images (require)
-                    }
-                    style={styles.startupImage}
+                  source={{ uri: startup.image }} // Display logo
+                  style={styles.startupImage}
                 />
                 <View style={styles.startupText}>
                   <Text style={styles.startupCreator}>{startup.creator}</Text>

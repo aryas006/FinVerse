@@ -28,7 +28,7 @@ const FeedPage = () => {
 
       if (error) throw error;
 
-      const postsWithImages = await Promise.all(data.map(async (post: any) => {
+      const postsWithDetails = await Promise.all(data.map(async (post: any) => {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('profile_image')
@@ -41,10 +41,26 @@ const FeedPage = () => {
           post.profile_image = profileData?.profile_image || defaultProfileImageUrl;
         }
 
+        // Fetch the likes count
+        const { count: likesCount } = await supabase
+          .from('likes')
+          .select('id', { count: 'exact' })
+          .eq('post_id', post.id);
+
+        post.likes = likesCount || 0;
+
+        // Fetch the comments count
+        const { count: commentsCount } = await supabase
+          .from('comments')
+          .select('id', { count: 'exact' })
+          .eq('post_id', post.id);
+
+        post.comments = commentsCount || 0;
+
         return post;
       }));
 
-      setPosts(postsWithImages);
+      setPosts(postsWithDetails);
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -53,6 +69,10 @@ const FeedPage = () => {
 
   const handleLikeChange = (postId: number, newLikes: number) => {
     setPosts(posts.map(post => post.id === postId ? { ...post, likes: newLikes } : post));
+  };
+
+  const handleCommentChange = (postId: number, newComments: number) => {
+    setPosts(posts.map(post => post.id === postId ? { ...post, comments: newComments } : post));
   };
 
   useEffect(() => {
@@ -92,7 +112,8 @@ const FeedPage = () => {
                 createdAt={post.created_at}
                 likes={post.likes || 0}
                 comments={post.comments || 0}
-                onLikeChange={handleLikeChange} // Pass callback to update likes
+                onLikeChange={handleLikeChange}
+                onCommentChange={handleCommentChange}
               />
               <Divider />
             </React.Fragment>

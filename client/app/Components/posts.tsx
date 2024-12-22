@@ -24,6 +24,7 @@ type PostItemProps = {
   likes: number;
   comments: number;
   onLikeChange: (postId: number, newLikes: number) => void; // Callback to update likes dynamically
+  onCommentChange: (postId: number, newComments: number) => void; // Callback to update comments dynamically
 };
 
 const PostItem: React.FC<PostItemProps> = ({
@@ -36,6 +37,7 @@ const PostItem: React.FC<PostItemProps> = ({
   likes,
   comments,
   onLikeChange,
+  onCommentChange,
 }) => {
   const [isHeartFilled, setIsHeartFilled] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -47,23 +49,21 @@ const PostItem: React.FC<PostItemProps> = ({
       try {
         const { data } = await supabase.auth.getUser();
         const user = data?.user;
-  
+
         if (user) {
           const userId = user.id;
-  
-          // Check if the user has already liked the post
-          const { data: likeData, error: likeError } = await supabase
+
+          const { data: likeData, error } = await supabase
             .from('likes')
             .select('id')
-            .eq('post_id', postId) // Ensure we check based on post_id
-            .eq('user_id', userId); // Ensure we check based on user_id
-  
-          if (likeError) {
-            console.error('Error checking like status:', likeError);
+            .eq('post_id', postId)
+            .eq('user_id', userId);
+
+          if (error) {
+            console.error('Error checking like status:', error);
             return;
           }
-  
-          // Set the heart state based on whether the user has liked the post
+
           setIsHeartFilled(likeData.length > 0);
         }
       } catch (error) {
@@ -78,114 +78,74 @@ const PostItem: React.FC<PostItemProps> = ({
     try {
       const { data } = await supabase.auth.getUser();
       const user = data?.user;
-  
+
       if (user) {
         const userId = user.id;
-  
-        // Check if the user has already liked the post
-        const { data: likeData, error: likeError } = await supabase
+
+        const { data: likeData, error } = await supabase
           .from('likes')
           .select('id')
-          .eq('post_id', postId) // Ensure we check based on post_id
-          .eq('user_id', userId); // Ensure we check based on user_id
-  
-        if (likeError) {
-          console.error('Error checking like status:', likeError);
+          .eq('post_id', postId)
+          .eq('user_id', userId);
+
+        if (error) {
+          console.error('Error checking like status:', error);
           return;
         }
-  
-        // If likeData is empty, it means the user has not liked the post yet
+
         if (likeData.length === 0) {
-          // Insert new like into the likes table
-          const { error: insertError } = await supabase.from('likes').insert([{ post_id: postId, user_id: userId }]);
-  
+          const { error: insertError } = await supabase
+            .from('likes')
+            .insert([{ post_id: postId, user_id: userId }]);
+
           if (insertError) {
             console.error('Error inserting like:', insertError);
             return;
           }
-  
-          // Now update the likes count in the posts table (ensure the likes count is a non-negative number)
-          const { data: postData, error: postError } = await supabase
-            .from('posts')
-            .select('likes')
-            .eq('id', postId)
-            .single();
-  
-          if (postError) {
-            console.error('Error fetching post data:', postError);
-            return;
-          }
-  
-          // Increment the like count by 1
-          const newLikesCount = (postData?.likes || 0) + 1;
-  
-          // Update the likes count in the posts table
-          const { error: updatePostError } = await supabase
+
+          const newLikesCount = likes + 1;
+          const { error: updateError } = await supabase
             .from('posts')
             .update({ likes: newLikesCount })
             .eq('id', postId);
-  
-          if (updatePostError) {
-            console.error('Error updating like count:', updatePostError);
+
+          if (updateError) {
+            console.error('Error updating like count:', updateError);
             return;
           }
-  
-          // Update UI to show the new like count
+
           onLikeChange(postId, newLikesCount);
-          setIsHeartFilled(true); // Change heart icon to filled
+          setIsHeartFilled(true);
         } else if (likeData.length === 1) {
-          // If the post is already liked, remove the like (unlike the post)
           const { error: deleteError } = await supabase
             .from('likes')
             .delete()
-            .match({ id: likeData[0].id }); // Match the like by its unique ID
-  
+            .match({ id: likeData[0].id });
+
           if (deleteError) {
             console.error('Error deleting like:', deleteError);
             return;
           }
-  
-          // Now decrement the likes count in the posts table (ensure the count doesn't go below 0)
-          const { data: postData, error: postError } = await supabase
-            .from('posts')
-            .select('likes')
-            .eq('id', postId)
-            .single();
-  
-          if (postError) {
-            console.error('Error fetching post data:', postError);
-            return;
-          }
-  
-          // Ensure the like count doesn't go below 0
-          const newLikesCount = Math.max((postData?.likes || 0) - 1, 0);
-  
-          // Update the likes count in the posts table
-          const { error: updatePostError } = await supabase
+
+          const newLikesCount = Math.max(likes - 1, 0);
+          const { error: updateError } = await supabase
             .from('posts')
             .update({ likes: newLikesCount })
             .eq('id', postId);
-  
-          if (updatePostError) {
-            console.error('Error updating like count:', updatePostError);
+
+          if (updateError) {
+            console.error('Error updating like count:', updateError);
             return;
           }
-  
-          // Update UI to show the new like count
+
           onLikeChange(postId, newLikesCount);
-          setIsHeartFilled(false); // Change heart icon to outline
-        } else {
-          console.error('Unexpected number of like records:', likeData.length);
+          setIsHeartFilled(false);
         }
-      } else {
-        console.log('User is not authenticated');
-        // Optionally, redirect the user to a login screen if not authenticated
       }
     } catch (error) {
       console.error('Error handling like:', error);
     }
   };
-  
 
   const handleCommentPress = () => {
     setIsModalVisible(true);
@@ -193,42 +153,60 @@ const PostItem: React.FC<PostItemProps> = ({
 
   const handleCommentSubmit = async () => {
     try {
-      // Retrieve the user_id from AsyncStorage (authToken)
       const authToken = await AsyncStorage.getItem('authToken');
-      
       if (authToken) {
-        const userId = authToken; // authToken directly holds the user_id
-  
-        // Proceed with comment submission logic
         const { error } = await supabase.from('comments').insert([
           {
             post_id: postId,
-            user_id: userId, // Use userId directly from AsyncStorage
+            user_id: authToken,
             content: commentText,
           },
         ]);
-  
+
         if (error) {
           console.error('Error submitting comment:', error);
           return;
         }
-  
-        setCommentText(''); // Clear the input field after comment submission
-        setIsModalVisible(false); // Close the modal after submission
-      } else {
-        console.log('User is not authenticated');
+
+        // Fetch updated comments count
+        const { data: commentsData, error: fetchError } = await supabase
+          .from('comments')
+          .select('id', { count: 'exact' })
+          .eq('post_id', postId);
+
+        if (fetchError) {
+          console.error('Error fetching comments count:', fetchError);
+          return;
+        }
+
+        const newCommentsCount = commentsData?.length || 0;
+
+        // Update the comments count in the posts table
+        const { error: updateError } = await supabase
+          .from('posts')
+          .update({ comments: newCommentsCount })
+          .eq('id', postId);
+
+        if (updateError) {
+          console.error('Error updating comments count:', updateError);
+          return;
+        }
+
+        // Update UI
+        onCommentChange(postId, newCommentsCount);
+        setCommentText('');
+        setIsModalVisible(false);
       }
     } catch (error) {
       console.error('Error handling comment submission:', error);
     }
   };
-  
 
   const handleCommentCancel = () => {
     setCommentText('');
     setIsModalVisible(false);
   };
-  console.log(postId);
+
   return (
     <View style={styles.postContainer}>
       <Link

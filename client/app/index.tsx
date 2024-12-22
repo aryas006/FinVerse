@@ -8,7 +8,7 @@ const Index = () => {
     return (
         <View style={styles.container}>
             {/* <Link href={'/search'} style={{ fontSize: 40, fontFamily: 'monospace' }}> */}
-            <Link href={'/auth/Login'} style={{ fontSize: 40, fontFamily: 'monospace' }}>
+            <Link href={'/(tabs)/landing/landing'} style={{ fontSize: 40, fontFamily: 'monospace' }}>
                 {"{finverse}"}
             </Link>
 

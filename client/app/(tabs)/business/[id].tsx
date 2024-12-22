@@ -192,43 +192,46 @@ export default function Business() {
             console.error('Error sharing content:', error);
         }
     };
-
     const handleFollow = async (startupId: number | undefined) => {
         if (!startupId) {
             Alert.alert('Error', 'Invalid startup ID.');
             return;
         }
-
+    
         try {
             const authToken = await AsyncStorage.getItem('authToken');
             if (!authToken) {
                 Alert.alert('Error', 'User not authenticated.');
                 return;
             }
-
+    
             // Fetch current followers
-            const { data, error } = await supabase
+            const { data, error: fetchError } = await supabase
                 .from('startups')
                 .select('follower, followers')
                 .eq('id', startupId)
                 .single();
-
-            if (error || !data) {
-                console.error('Error fetching followers:', error);
+    
+            if (fetchError || !data) {
+                console.error('Error fetching followers:', fetchError);
                 Alert.alert('Error', 'Unable to fetch followers.');
                 return;
             }
-
-            let updatedFollowerList = data?.follower || [];
+    
+            console.log('Current Follower List:', data.follower);
+            console.log('Current Followers Count:', data.followers);
+    
+            // Check if the user already follows the startup
+            let updatedFollowerList = data.follower || [];
             if (updatedFollowerList.includes(authToken)) {
                 Alert.alert('Info', 'You are already following this startup.');
                 return;
             }
-
+    
             // Update the follower list and followers count
             updatedFollowerList.push(authToken);
             const updatedFollowerCount = (data.followers || 0) + 1;
-
+    
             const { error: updateError } = await supabase
                 .from('startups')
                 .update({
@@ -236,19 +239,20 @@ export default function Business() {
                     followers: updatedFollowerCount,
                 })
                 .eq('id', startupId);
-
+    
             if (updateError) {
-                console.error('Error updating followers:', updateError);
+                console.error('Error updating followers:', updateError.message);
                 Alert.alert('Error', 'Unable to follow the startup.');
                 return;
             }
-
+    
             Alert.alert('Success', 'You are now following this startup!');
         } catch (error) {
             console.error('Unexpected error in handleFollow:', error);
             Alert.alert('Error', 'An unexpected error occurred.');
         }
     };
+    
 
 
 
@@ -417,10 +421,10 @@ export default function Business() {
                             />
                             <Text style={styles.actionText}>Share</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
+                        {/* <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
 
                             <Text style={styles.actionText}>UpVote</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
                     {/* Followers Section */}
                     <View style={styles.followersSection}>
@@ -525,9 +529,9 @@ export default function Business() {
                                     <TouchableOpacity style={styles.teamActionButton} onPress={() => Alert.alert('Follow', `You followed ${member.name}`)}>
                                         <Text style={styles.teamActionText}>Follow</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={styles.teamActionButtonConnect} onPress={() => Alert.alert('Connect', `You sent a connection request to ${member.name}`)}>
+                                    {/* <TouchableOpacity style={styles.teamActionButtonConnect} onPress={() => Alert.alert('Connect', `You sent a connection request to ${member.name}`)}>
                                         <Text style={styles.teamActionText}>Connect</Text>
-                                    </TouchableOpacity>
+                                    </TouchableOpacity> */}
                                 </View>
                             </View>
                         </View>
@@ -668,7 +672,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginVertical: 10,
-        width: '100%',
+        width: '80%',
+        marginHorizontal: "auto"
     },
     actionButton: {
         backgroundColor: 'rgba(156, 156, 156, 0.25)',
@@ -676,7 +681,7 @@ const styles = StyleSheet.create({
         paddingTop: 22,
         paddingHorizontal: 18,
         borderRadius: 16,
-        width: "23%",
+        width: "30%",
         alignItems: "center",
         gap: 10
     },

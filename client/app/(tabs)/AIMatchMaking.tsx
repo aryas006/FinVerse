@@ -95,18 +95,27 @@ const AIMatchMaking = () => {
                 end={{ x: 1, y: 1 }}
                 style={styles.gradient}
             />
+            <TouchableOpacity onPress={() => { navigation.goBack() }} style={{
+                width: 100,
+                height: 50,
+                alignItems: 'flex-start',
+                justifyContent: 'center',
+
+                marginLeft: 20,
+
+            }}>
+                <Text style={{
+                    color: 'white',
+                    fontSize: 20,
+                }}>
+                    Back
+                </Text>
+            </TouchableOpacity>
 
             <BlurView intensity={95} tint="dark" style={styles.blurContainer}>
 
                 <View style={styles.contentWrapper}>
-                    <TouchableOpacity onPress={() => { navigation.goBack() }} style={{
 
-
-                    }}>
-                        <Text>
-                            Back
-                        </Text>
-                    </TouchableOpacity>
                     <Text style={styles.title}>Finding Your Perfect Match</Text>
                     <View style={styles.loaderContainer}>
                         <ActivityIndicator size="large" color="#4fc3f7" style={styles.loader} />

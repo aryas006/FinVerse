@@ -317,6 +317,7 @@ export default function Business() {
                 transparent={true}
                 visible={showFundingModal}
                 onRequestClose={() => setShowFundingModal(false)}
+
             >
                 <BlurView intensity={100} style={styles.modalBlur}>
                     <View style={styles.modalContent}>
@@ -960,7 +961,8 @@ const styles = StyleSheet.create({
     },
     modalBlur: {
         flex: 1,
-        justifyContent: 'flex-end',
+        justifyContent: 'flex-start',
+        marginTop: 60,
     },
 
 
@@ -1013,7 +1015,7 @@ const styles = StyleSheet.create({
         padding: 16,
         color: '#FFFFFF',
         fontSize: 16,
-        height: 100,
+        height: 60,
         textAlignVertical: 'top',
         marginBottom: 20,
         width: '100%',

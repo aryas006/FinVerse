@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, ActivityIndicator, Text, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, View, ActivityIndicator, Text, Image, TouchableOpacity, FlatList } from 'react-native';
 import { supabase } from '@/supabaseClient';
 import { BlurView } from 'expo-blur';
 import PostItem from '../Components/posts';
@@ -8,6 +8,7 @@ import { Divider } from 'react-native-elements/dist/divider/Divider';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const FeedPage = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -122,12 +123,33 @@ const FeedPage = () => {
             <Ionicons name="chatbubble" size={24} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleProfileNavigation}>
-          <Image source={{ uri: ppImage || defaultProfileImageUrl }} style={styles.profileIcon} />
+            <Image source={{ uri: ppImage || defaultProfileImageUrl }} style={styles.profileIcon} />
           </TouchableOpacity>
         </View>
       </BlurView>
 
-      <ScrollView contentContainerStyle={styles.feedContainer}>
+      <FlatList
+        contentContainerStyle={styles.feedContainer}
+        data={posts}
+        renderItem={({ item }) => (
+          <React.Fragment key={item.id}>
+            <PostItem
+              postId={item.id}
+              profileImage={item.profile_image}
+              userName={item.username || 'Anonymous'}
+              content={item.content}
+              postImage={item.image_url}
+              createdAt={item.created_at}
+              likes={item.likes || 0}
+              comments={item.comments || 0}
+              onLikeChange={handleLikeChange}
+              onCommentChange={handleCommentChange}
+            />
+            <Divider />
+          </React.Fragment>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      >
         {posts.length === 0 ? (
           <Text>No posts available</Text>
         ) : (
@@ -149,7 +171,7 @@ const FeedPage = () => {
             </React.Fragment>
           ))
         )}
-      </ScrollView>
+      </FlatList>
       <BottomNav />
     </View>
   );

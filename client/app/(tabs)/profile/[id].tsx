@@ -143,9 +143,12 @@ const UserProfile: React.FC = () => {
               style={styles.profileImage}
             />
           </View>
-          <TouchableOpacity onPress={handleEditNav} style={styles.connectButton}>
+          <TouchableOpacity onPress={handleFollow} style={styles.connectButton}>
+            <Text style={styles.connectButtonText}>Follow</Text>
+            </TouchableOpacity>
+          {/* <TouchableOpacity onPress={handleEditNav} style={styles.connectButton}>
             <Text style={styles.connectButtonText}>Edit</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
         <View style={styles.userInfo}>
           {user?.full_name && <Text style={styles.name}>{user.full_name}</Text>}

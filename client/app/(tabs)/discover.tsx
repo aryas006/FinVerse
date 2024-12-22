@@ -30,101 +30,7 @@ interface Startup {
   creator: string;
 }
 
-const events: Event[] = [
-  {
-    id: '1',
-    image: require('../../assets/images/event_icon.png'),
-    title: 'Framer Web MasterClass',
-    time: 'Today, 2:00 pm',
-    organizer: 'Framer',
-  },
-  {
-    id: '2',
-    image: require('../../assets/images/event_b.png'),
-    title: 'Art Class',
-    time: 'Today, 2:00 pm',
-    organizer: 'Artist',
-  },
-  {
-    id: '3',
-    image: require('../../assets/images/event_icon_b.png'),
-    title: 'Web Dev',
-    time: 'Today, 2:00 pm',
-    organizer: 'Framer',
-  },
-  {
-    id: '4',
-    image: require('../../assets/images/event_c.png'),
-    title: 'Design Workshop',
-    time: 'Today, 4:00 pm',
-    organizer: 'Designer',
-  },
-  {
-    id: '5',
-    image: require('../../assets/images/event_icon.png'),
-    title: 'Startup Pitch',
-    time: 'Today, 5:00 pm',
-    organizer: 'Entrepreneur',
-  },
-  {
-    id: '6',
-    image: require('../../assets/images/event_icon_b.png'),
-    title: 'Code Review',
-    time: 'Today, 6:00 pm',
-    organizer: 'Developer',
-  },
-];
 
-// const startups: Startup[] = [
-//   {
-//     id: '1',
-//     image: require('../../assets/images/st_a.png'),
-//     name: 'Bayrack',
-//     description:
-//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-//     creator: 'Arya',
-//   },
-//   {
-//     id: '2',
-//     image: require('../../assets/images/st_b.png'),
-//     name: 'Kite',
-//     description:
-//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-//     creator: 'Zerodha',
-//   },
-//   {
-//     id: '3',
-//     image: require('../../assets/images/event_icon_b.png'),
-//     name: '1px',
-//     description:
-//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-//     creator: 'Arya',
-//   },
-//   {
-//     id: '4',
-//     image: require('../../assets/images/event_b.png'),
-//     name: 'RedChillies',
-//     description:
-//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-//     creator: 'SRK',
-//   },
-//   {
-//     id: '5',
-//     image: require('../../assets/images/event_icon_b.png'),
-//     name: 'MCA',
-//     description:
-//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-//     creator: 'Parth',
-//   },
-//   {
-//     id: '6',
-//     image: require('../../assets/images/st_b.png'),
-//     name: 'Cwrazy Club',
-//     description:
-//       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut ultricies ligula.',
-//     creator: 'Praju',
-//   },
-// ];
 
 const groupEvents = (data: Event[], itemsPerColumn: number) => {
   const columns: Event[][] = [];
@@ -167,10 +73,58 @@ const fetchStartups = async (): Promise<Startup[]> => {
   }
 };
 
+const fetchEvents = async (): Promise<Event[]> => {
+  try {
+    // Fetch events from the events table
+    const { data: eventsData, error: eventsError } = await supabase
+      .from('events')
+      .select('id, event_name, event_date_time, description, user_id')
+      .order('event_date_time', { ascending: true });
+
+    if (eventsError) {
+      console.error('Error fetching events:', eventsError);
+      return [];
+    }
+
+    // Extract unique user IDs from the events
+    const userIds = [...new Set(eventsData.map((event: any) => event.user_id))];
+
+    // Fetch profiles based on user IDs
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('user_id, username')
+      .in('user_id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return [];
+    }
+
+    // Map user IDs to usernames for quick lookup
+    const userIdToUsername: Record<string, string> = {};
+    profilesData.forEach((profile: any) => {
+      userIdToUsername[profile.user_id] = profile.username;
+    });
+
+    // Map the events data to include organizer usernames
+    return eventsData.map((event: any) => ({
+      id: event.id.toString(),
+      image: 'https://via.placeholder.com/100', // Replace with actual event image URL if available in your table
+      title: event.event_name || 'Untitled Event',
+      time: new Date(event.event_date_time).toLocaleString(),
+      organizer: userIdToUsername[event.user_id] || 'Unknown Organizer', // Use username if available
+    }));
+  } catch (err) {
+    console.error('Unexpected error:', err);
+    return [];
+  }
+};
+
+
 
 const Discover = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false); // Moved inside the component
-
+  const [events, setEvents] = useState<Event[]>([]); // Dynamically fetched events
   const [startups, setStartups] = useState<Startup[]>([]); // Dynamically fetched startups
 
   useEffect(() => {
@@ -178,8 +132,13 @@ const Discover = () => {
       const fetchedStartups = await fetchStartups();
       setStartups(fetchedStartups);
     };
+    const getEvents = async () => {
+      const fetchedEvents = await fetchEvents();
+      setEvents(fetchedEvents);
+    };
 
     getStartups();
+    getEvents();
   }, []);
 
   useEffect(() => {
@@ -245,7 +204,7 @@ const Discover = () => {
                 <TouchableOpacity
                   key={event.id}
                   style={styles.eventItem}
-                // onPress={() => router.push("/events/[id]")}
+                onPress={() => router.push(`/events/${event.id}`)}
                 >
                   <Image
                     source={

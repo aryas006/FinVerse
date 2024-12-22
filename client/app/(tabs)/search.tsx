@@ -102,7 +102,7 @@ const SearchPage: React.FC = () => {
             console.log("User id>>>>> ",item.id);
             router.push(`/profile/${item.id}`);
         } else if (item.type === "event") {
-            router.push(`/startup/${item.id}`);
+            router.push(`/events/${item.id}`);
         }
     };
 

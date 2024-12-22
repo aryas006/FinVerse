@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,107 +7,129 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import BottomNav from '@/app/Components/BottomNav';
-import { useNavigation, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router/build/hooks';
+import { supabase } from '@/supabaseClient';
 
-
-
-const Events: React.FC = ({ }) => {
+const Events: React.FC = () => {
   const router = useRouter();
-  const navigation = useNavigation();
-  const eventData = [
-    {
-      id: '1',
-      date: 'Tomorrow/Wednesday',
-      title: 'Art Class',
-      artist: 'Artist',
-      time: 'Today, 2:00 pm',
-      image: 'https://via.placeholder.com/100', // Replace with actual URL
-    },
-    {
-      id: '2',
-      date: 'Jul 31/Wednesday',
-      title: 'Framer Web MasterClass',
-      artist: 'Framer',
-      time: 'Today, 2:00 pm',
-      image: 'https://via.placeholder.com/100', // Replace with actual URL
-    },
-    {
-      id: '3',
-      date: 'Jun 2/Tuesday',
-      title: 'Framer Web MasterClass',
-      artist: 'Framer',
-      time: 'Today, 2:00 pm',
-      image: 'https://via.placeholder.com/100', // Replace with actual URL
-    },
-  ];
+  const { id } = useLocalSearchParams(); // Fetch the event ID from the route parameters
+  const [eventData, setEventData] = useState<any>(null); // Holds the event data
+  const [loading, setLoading] = useState<boolean>(true); // Loading state
 
-  const renderEvent = ({ item }: { item: Event }) => (
-    <TouchableOpacity
-      style={styles.eventContainer}
-      onPress={() => router.push(`/?id=${item.id}`)}
-    >
-      <View style={styles.eventContainer}>
-        <Image source={{ uri: item.image }} style={styles.eventImage} />
-        <View style={styles.eventDetails}>
-          <Text style={styles.eventDate}>{item.date}</Text>
-          <Text style={styles.eventTitle}>{item.title}</Text>
-          <Text style={styles.eventArtist}>{item.artist}</Text>
-          <Text style={styles.eventTime}>{item.time}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+  // Function to fetch event details from the database
+  const fetchEvent = async () => {
+    try {
+      setLoading(true); // Start loading
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, event_date_time, description, event_name, schedules')
+        .eq('id', id) // Fetch the event by ID
+        .single();
+
+      if (error) throw error;
+
+      // Format the schedules for easier rendering
+      const formattedSchedules = (data.schedules || []).map((schedule: any) => {
+        return Object.entries(schedule).map(([time, name]) => ({
+          time,
+          name,
+        }));
+      }).flat();
+
+      setEventData({
+        id: data.id.toString(),
+        date: new Date(data.event_date_time).toLocaleDateString(),
+        time: new Date(data.event_date_time).toLocaleTimeString(),
+        title: data.event_name || 'Untitled Event',
+        description: data.description || 'No description available.',
+        schedules: formattedSchedules,
+        image: 'https://via.placeholder.com/100', // Placeholder for now
+      });
+    } catch (error) {
+      console.error('Error fetching event:', error);
+    } finally {
+      setLoading(false); // End loading
+    }
+  };
+
+  // Fetch event details when the component mounts
+  useEffect(() => {
+    if (id) fetchEvent();
+  }, [id]);
+
+  // Render a single schedule
+  const renderSchedule = ({ item }: { item: { time: string; name: string } }) => (
+    <View style={styles.scheduleContainer}>
+      <Text style={styles.scheduleTime}>{new Date(item.time).toLocaleString()}</Text>
+      <Text style={styles.scheduleTitle}>{item.name}</Text>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={{
-        color: '#000',
-        fontSize: 16,
-        padding: 10,
-        backgroundColor: '#f9f9f9',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
-        marginTop: 40
-      }}
-        onPress={() => navigation.goBack()}
+      <Text
+        style={{
+          color: '#000',
+          fontSize: 16,
+          padding: 10,
+          backgroundColor: '#f9f9f9',
+          borderBottomWidth: 1,
+          borderBottomColor: '#ddd',
+          marginTop: 40,
+        }}
+        onPress={() => router.back()}
       >
         Back
       </Text>
-      {/* Scrollable Content */}
-      <ScrollView style={styles.content}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Image
-            source={{
-              uri: 'https://via.placeholder.com/400', // Replace with actual header image URL
-            }}
-            style={styles.headerImage}
-          />
-          <TouchableOpacity style={styles.subscribeButton}>
-            <Text style={styles.subscribeText}>Subscribe</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Title Section */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Art Class</Text>
-          <Text style={styles.description}>
-            Art classes provide individuals with the opportunity to learn, practice, and refine artistic skills in
-            various mediums and styles. They cater to a wide range of interests, skill levels, and age groups, from
-            children exploring creativity to professional artists seeking to deepen their expertise.
-          </Text>
+      {loading ? (
+        // Show a loader while fetching data
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Loading event details...</Text>
         </View>
+      ) : (
+        <ScrollView style={styles.content}>
+          {/* Header Section */}
+          <View style={styles.header}>
+            <Image
+              source={{
+                uri: eventData?.image, // Replace with actual header image URL
+              }}
+              style={styles.headerImage}
+            />
+            <TouchableOpacity style={styles.subscribeButton}>
+              <Text style={styles.subscribeText}>Subscribe</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Events Section */}
-        <FlatList
-          data={eventData}
-          renderItem={renderEvent}
-          keyExtractor={(item) => item.id}
-          style={styles.eventList}
-        />
-      </ScrollView>
+          {/* Title Section */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>{eventData?.title}</Text>
+            <Text style={styles.description}>{eventData?.description}</Text>
+          </View>
+
+          {/* Schedules Section */}
+          <View style={styles.scheduleSection}>
+            <Text style={styles.sectionTitle}>Schedules</Text>
+            {eventData?.schedules && eventData.schedules.length > 0 ? (
+              <FlatList
+                data={eventData.schedules}
+                renderItem={renderSchedule}
+                keyExtractor={(item) => item.time} // Using time as key
+                style={styles.eventList}
+              />
+            ) : (
+              <Text style={styles.emptyText}>No schedules available.</Text>
+            )}
+          </View>
+        </ScrollView>
+      )}
 
       {/* Fixed Bottom Navigation */}
       <View style={styles.bottomNav}>
@@ -117,19 +139,20 @@ const Events: React.FC = ({ }) => {
   );
 };
 
-type Event = {
-  id: string;
-  date: string;
-  title: string;
-  artist: string;
+type Schedule = {
   time: string;
-  image: string;
+  name: string;
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,
@@ -169,44 +192,37 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 22,
   },
-  eventList: {
-    marginTop: 10,
+  scheduleSection: {
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
-  eventContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  scheduleContainer: {
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
-  eventImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-    marginRight: 15,
-    resizeMode: 'cover',
-  },
-  eventDetails: {
-    flex: 1,
-  },
-  eventDate: {
+  scheduleTime: {
     fontSize: 14,
     color: '#888',
   },
-  eventTitle: {
+  scheduleTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 4,
-    marginBottom: 2,
   },
-  eventArtist: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 2,
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 20,
   },
-  eventTime: {
-    fontSize: 12,
-    color: '#777',
+  eventList: {
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
   bottomNav: {
     position: 'absolute',

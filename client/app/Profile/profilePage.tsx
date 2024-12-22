@@ -30,8 +30,9 @@ const UserProfile: React.FC = () => {
 
       if (error) throw error;
 
+      // Parse the projects JSON string into a JavaScript array
       const projects = data.projects ? JSON.parse(data.projects) : [];
-      setUser({ ...data, projects }); // Update user state
+      setUser({ ...data, projects }); // Update user state with parsed projects
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -76,9 +77,9 @@ const UserProfile: React.FC = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <Image
-        source={require('../../assets/images/backGround.png')}
-        style={styles.backgroundImage}
+      <Image 
+        source={require('../../assets/images/backGround.png')} 
+        style={styles.backgroundImage} 
       />
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
@@ -98,30 +99,49 @@ const UserProfile: React.FC = () => {
         {user?.created_at && <Text style={styles.joined}>Joined {user.created_at}</Text>}
         {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
       </View>
-
+      <View style={styles.projects}>
+        <Text style={styles.projectsTitle}>Projects</Text>
+        {user?.projects && user.projects.length > 0 ? (
+          user.projects.map((project: any, index: number) => (
+            <View key={index} style={styles.projectContainer}>
+              {project.image && (
+                <Image
+                  source={{ uri: project.image }}
+                  style={styles.projectImage}
+                />
+              )}
+              <View style={styles.projectInfo}>
+                {project.title && <Text style={styles.projectName}>{project.title}</Text>}
+                {project.description && <Text style={styles.projectDescription}>{project.description}</Text>}
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text>No projects available.</Text>
+        )}
+      </View>
       <View style={styles.postsSection}>
         <Text style={styles.postsTitle}>Your Posts</Text>
         {postsLoading ? (
           <ActivityIndicator size="large" color="#0000ff" />
         ) : posts.length > 0 ? (
-<ScrollView>
-  {posts.map((post: any) => (
-    <PostItem
-      key={post.id}
-      postId={post.id}
-      profileImage={user?.profile_image}
-      userName={user?.username || 'Anonymous'}
-      content={post.content}
-      postImage={post.image_url}
-      createdAt={post.created_at}
-      likes={post.likes || 0}
-      comments={post.comments || 0}
-      onLikeChange={() => {}} // No-op function
-      onCommentChange={() => {}} // No-op function
-    />
-  ))}
-</ScrollView>
-
+          <ScrollView>
+            {posts.map((post: any) => (
+              <PostItem
+                key={post.id}
+                postId={post.id}
+                profileImage={user?.profile_image}
+                userName={user?.username || 'Anonymous'}
+                content={post.content}
+                postImage={post.image_url}
+                createdAt={post.created_at}
+                likes={post.likes || 0}
+                comments={post.comments || 0}
+                onLikeChange={() => {}} // No-op function
+                onCommentChange={() => {}} // No-op function
+              />
+            ))}
+          </ScrollView>
         ) : (
           <Text>No posts available</Text>
         )}
@@ -136,9 +156,9 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     position: 'absolute',
-    height: '25%',
-    width: '100%',
-    resizeMode: 'cover',
+    height: 220,
+    width: '100%', 
+    resizeMode: 'cover', 
   },
   header: {
     marginTop: '40%',
@@ -171,7 +191,7 @@ const styles = StyleSheet.create({
   joined: {
     fontSize: 16,
     color: 'gray',
-    marginBottom: 5,
+    marginBottom: 5, 
   },
   bio: {
     fontSize: 14,
@@ -186,6 +206,35 @@ const styles = StyleSheet.create({
   connectButtonText: {
     color: 'white',
     textAlign: 'center',
+  },
+  projects: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  projectsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  projectContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  projectImage: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+  },
+  projectInfo: {
+    flex: 1,
+  },
+  projectName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  projectDescription: {
+    fontSize: 14,
+    color: 'gray',
   },
   postsSection: {
     marginTop: 20,

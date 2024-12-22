@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
+    paddingTop: 42,
     backgroundColor: '#f8f9fa',
   },
   backButton: {

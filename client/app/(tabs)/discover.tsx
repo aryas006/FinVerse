@@ -12,6 +12,9 @@ import {
 import BottomNav from '../Components/BottomNav';
 import { Link, router } from 'expo-router';
 import { supabase } from '@/supabaseClient';
+import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { fetchStartups } from '../Components/FetchStartups';
 
 interface Event {
@@ -80,7 +83,7 @@ const fetchEvents = async (): Promise<Event[]> => {
     // Fetch events from the events table
     const { data: eventsData, error: eventsError } = await supabase
       .from('events')
-      .select('id, event_name, event_date_time, description, user_id')
+      .select('id, event_name, event_date_time, description, user_id, eve_image')
       .order('event_date_time', { ascending: true });
 
     if (eventsError) {
@@ -111,7 +114,7 @@ const fetchEvents = async (): Promise<Event[]> => {
     // Map the events data to include organizer usernames
     return eventsData.map((event: any) => ({
       id: event.id.toString(),
-      image: 'https://via.placeholder.com/100', // Replace with actual event image URL if available in your table
+      image: event.eve_image, // Replace with actual event image URL if available in your table
       title: event.event_name || 'Untitled Event',
       time: new Date(event.event_date_time).toLocaleString(),
       organizer: userIdToUsername[event.user_id] || 'Unknown Organizer', // Use username if available
@@ -128,6 +131,34 @@ const Discover = () => {
   const [fontsLoaded, setFontsLoaded] = useState(false); // Moved inside the component
   const [events, setEvents] = useState<Event[]>([]); // Dynamically fetched events
   const [startups, setStartups] = useState<Startup[]>([]); // Dynamically fetched startups
+  const [ppImage, setPPImage] = useState<string | null>(null);
+
+  const defaultProfileImageUrl = 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png';
+
+
+  const fetchPP = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem('authToken'); // Get the user's auth token
+      if (!authToken) throw new Error('User not authenticated.');
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('profile_image')
+        .eq('user_id', authToken)
+        .single();
+
+      if (error) throw error;
+
+      setPPImage(data?.profile_image || defaultProfileImageUrl);
+    } catch (error) {
+      console.error('Error fetching profile picture:', error);
+      setPPImage(defaultProfileImageUrl); // Fallback to default image on error
+    }
+  };
+
+  const handleProfileNavigation = () => {
+    router.push('/Profile/profilePage');
+  };
 
   useEffect(() => {
     const getStartups = async () => {
@@ -141,6 +172,7 @@ const Discover = () => {
 
     getStartups();
     getEvents();
+    fetchPP();
   }, []);
 
   useEffect(() => {
@@ -184,15 +216,17 @@ const Discover = () => {
     <>
 
       <ScrollView style={styles.container}>
-        <View style={styles.topNavBar}>
+        <BlurView intensity={50} tint="light" style={styles.topNavBar}>
           <Text style={styles.header}>Discover</Text>
-          <Link href = '/Profile/profilePage'>
-          <Image
-            source={require('../../assets/images/pp.jpg') }
-            style={styles.profileIcon}
-          />
-          </Link>
-        </View>
+          <View style={styles.topOps}>
+            <TouchableOpacity style={styles.chatIcon} onPress={() => router.push('/chat_list/cl')}>
+              <Ionicons name="chatbubble" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleProfileNavigation}>
+            <Image source={{ uri: ppImage || defaultProfileImageUrl }} style={styles.profileIcon} />
+            </TouchableOpacity>
+          </View>
+        </BlurView>
 
         {/* Events Section */}
         <Text style={styles.subHeader}>Mumbai</Text>
@@ -275,7 +309,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
     //   paddingLeft: 28,
-    marginTop: 32,
+    marginTop: 52,
   },
   topNavBar: {
     flexDirection: "row",
@@ -289,6 +323,18 @@ const styles = StyleSheet.create({
     //   fontWeight: 'bold',
     marginTop: 20,
     fontFamily: 'Raleway-Regular'
+  },
+  topOps: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  chatIcon: {
+    padding: 6,
+    backgroundColor: "#13375F",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 100
   },
   profileIcon: {
     height: 40,

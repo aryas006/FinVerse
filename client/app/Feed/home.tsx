@@ -7,15 +7,38 @@ import BottomNav from '../Components/BottomNav';
 import { Divider } from 'react-native-elements/dist/divider/Divider';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FeedPage = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [ppImage, setPPImage] = useState<string | null>(null);
   const router = useRouter();
 
   const handleProfileNavigation = () => {
     router.push('/Profile/profilePage');
+  };
+
+  const auth = AsyncStorage.getItem("authToken");
+
+  const fetchPP = async () => {
+    try {
+      const authToken = await AsyncStorage.getItem('authToken'); // Get the user's auth token
+      if (!authToken) throw new Error('User not authenticated.');
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('profile_image')
+        .eq('user_id', authToken)
+        .single();
+
+      if (error) throw error;
+
+      setPPImage(data?.profile_image || defaultProfileImageUrl);
+    } catch (error) {
+      console.error('Error fetching profile picture:', error);
+      setPPImage(defaultProfileImageUrl); // Fallback to default image on error
+    }
   };
 
   const defaultProfileImageUrl = 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png';
@@ -78,6 +101,7 @@ const FeedPage = () => {
 
   useEffect(() => {
     fetchPosts();
+    fetchPP();
   }, []);
 
   if (loading) {
@@ -98,7 +122,7 @@ const FeedPage = () => {
             <Ionicons name="chatbubble" size={24} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleProfileNavigation}>
-            <Image source={require('../../assets/images/pp.jpg')} style={styles.profileIcon} />
+          <Image source={{ uri: ppImage || defaultProfileImageUrl }} style={styles.profileIcon} />
           </TouchableOpacity>
         </View>
       </BlurView>

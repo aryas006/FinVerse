@@ -27,7 +27,7 @@ const Events: React.FC = () => {
 
       const { data, error } = await supabase
         .from('events')
-        .select('id, event_date_time, description, event_name, schedules')
+        .select('id, event_date_time, description, event_name, schedules, eve_image')
         .eq('id', id) // Fetch the event by ID
         .single();
 
@@ -48,7 +48,7 @@ const Events: React.FC = () => {
         title: data.event_name || 'Untitled Event',
         description: data.description || 'No description available.',
         schedules: formattedSchedules,
-        image: 'https://via.placeholder.com/100', // Placeholder for now
+        image: data.eve_image, // Placeholder for now
       });
     } catch (error) {
       console.error('Error fetching event:', error);

@@ -76,77 +76,85 @@ const UserProfile: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Image 
-        source={require('../../assets/images/backGround.png')} 
-        style={styles.backgroundImage} 
-      />
-      <View style={styles.header}>
-        <View style={styles.profileImageContainer}>
-          <Image
-            source={{
-              uri: user?.profile_image || 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png',
-            }}
-            style={styles.profileImage}
-          />
+    <>
+      <TouchableOpacity
+              style={styles.stickyBackButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+      <ScrollView style={styles.container}>
+        <Image 
+          source={require('../../assets/images/backGround.png')} 
+          style={styles.backgroundImage} 
+        />
+        <View style={styles.header}>
+          <View style={styles.profileImageContainer}>
+            <Image
+              source={{
+                uri: user?.profile_image || 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png',
+              }}
+              style={styles.profileImage}
+            />
+          </View>
+          <TouchableOpacity onPress={handleEditNav} style={styles.connectButton}>
+            <Text style={styles.connectButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={handleEditNav} style={styles.connectButton}>
-          <Text style={styles.connectButtonText}>Edit</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.userInfo}>
-        {user?.full_name && <Text style={styles.name}>{user.full_name}</Text>}
-        {user?.created_at && <Text style={styles.joined}>Joined {user.created_at}</Text>}
-        {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
-      </View>
-      <View style={styles.projects}>
-        <Text style={styles.projectsTitle}>Projects</Text>
-        {user?.projects && user.projects.length > 0 ? (
-          user.projects.map((project: any, index: number) => (
-            <View key={index} style={styles.projectContainer}>
-              {project.image && (
-                <Image
-                  source={{ uri: project.image }}
-                  style={styles.projectImage}
-                />
-              )}
-              <View style={styles.projectInfo}>
-                {project.title && <Text style={styles.projectName}>{project.title}</Text>}
-                {project.description && <Text style={styles.projectDescription}>{project.description}</Text>}
+        <View style={styles.userInfo}>
+          {user?.full_name && <Text style={styles.name}>{user.full_name}</Text>}
+          {user?.created_at && <Text style={styles.joined}>Joined {user.created_at}</Text>}
+          {user?.bio && <Text style={styles.bio}>{user.bio}</Text>}
+        </View>
+        <View style={styles.projects}>
+          <Text style={styles.projectsTitle}>Projects</Text>
+          {user?.projects && user.projects.length > 0 ? (
+            user.projects.map((project: any, index: number) => (
+              <View key={index} style={styles.projectContainer}>
+                {project.image && (
+                  <Image
+                    source={{ uri: project.image }}
+                    style={styles.projectImage}
+                  />
+                )}
+                <View style={styles.projectInfo}>
+                  {project.title && <Text style={styles.projectName}>{project.title}</Text>}
+                  {project.description && <Text style={styles.projectDescription}>{project.description}</Text>}
+                </View>
               </View>
-            </View>
-          ))
-        ) : (
-          <Text>No projects available.</Text>
-        )}
-      </View>
-      <View style={styles.postsSection}>
-        <Text style={styles.postsTitle}>Your Posts</Text>
-        {postsLoading ? (
-          <ActivityIndicator size="large" color="#0000ff" />
-        ) : posts.length > 0 ? (
-          <ScrollView>
-            {posts.map((post: any) => (
-              <PostItem
-                key={post.id}
-                postId={post.id}
-                profileImage={user?.profile_image}
-                userName={user?.username || 'Anonymous'}
-                content={post.content}
-                postImage={post.image_url}
-                createdAt={post.created_at}
-                likes={post.likes || 0}
-                comments={post.comments || 0}
-                onLikeChange={() => {}} // No-op function
-                onCommentChange={() => {}} // No-op function
-              />
-            ))}
-          </ScrollView>
-        ) : (
-          <Text>No posts available</Text>
-        )}
-      </View>
-    </ScrollView>
+            ))
+          ) : (
+            <Text>No projects available.</Text>
+          )}
+        </View>
+        <View style={styles.postsSection}>
+          <Text style={styles.postsTitle}>Your Posts</Text>
+          {postsLoading ? (
+            <ActivityIndicator size="large" color="#0000ff" />
+          ) : posts.length > 0 ? (
+            <ScrollView>
+              {posts.map((post: any) => (
+                <PostItem
+                  key={post.id}
+                  postId={post.id}
+                  profileImage={user?.profile_image}
+                  userName={user?.username || 'Anonymous'}
+                  content={post.content}
+                  postImage={post.image_url}
+                  createdAt={post.created_at}
+                  likes={post.likes || 0}
+                  comments={post.comments || 0}
+                  onLikeChange={() => {}} // No-op function
+                  onCommentChange={() => {}} // No-op function
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <Text>No posts available</Text>
+          )}
+        </View>
+      </ScrollView>
+    </>
   );
 };
 
@@ -224,6 +232,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     marginRight: 10,
+    borderRadius: 4
   },
   projectInfo: {
     flex: 1,
@@ -237,7 +246,7 @@ const styles = StyleSheet.create({
     color: 'gray',
   },
   postsSection: {
-    marginTop: 20,
+    marginVertical: 20,
     paddingHorizontal: 20,
   },
   postsTitle: {
@@ -249,6 +258,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  stickyBackButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 10,
+    paddingVertical: 12,
+    paddingTop: 52,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
   },
 });
 

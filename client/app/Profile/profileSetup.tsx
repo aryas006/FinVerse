@@ -181,175 +181,183 @@ const ProfileSetup: React.FC = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Setup Your Profile</Text>
-
-      {/* Profile Picture */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Profile Picture</Text>
-        <TouchableOpacity
-          style={styles.imagePicker}
-          onPress={() => handlePickImage((uri) => setProfileImage(uri))}
-        >
-          {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
-          ) : (
-            <Text style={styles.imagePickerText}>Pick a Profile Picture</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Username */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Username</Text>
-        <TextInput
-          style={styles.input}
-          value={username}
-          onChangeText={setUsername}
-          placeholder="Enter your username"
-        />
-      </View>
-
-      {/* Role */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Role</Text>
-        <TextInput
-          style={styles.input}
-          value={role}
-          onChangeText={setRole}
-          placeholder="Enter your role"
-        />
-      </View>
-
-      {/* Date of Birth */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Date of Birth</Text>
-        <TextInput
-          style={styles.input}
-          value={dob}
-          onChangeText={setDob}
-          placeholder="YYYY-MM-DD"
-        />
-      </View>
-
-      {/* Bio */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Bio</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={bio}
-          onChangeText={setBio}
-          placeholder="Write a short bio"
-          multiline
-        />
-      </View>
-
-      {/* Projects */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Projects</Text>
-        {projects.map((project, index) => (
-          <View key={index} style={styles.projectContainer}>
-            <TouchableOpacity
-              style={styles.imagePicker}
-              onPress={() =>
-                handlePickImage((uri) => {
-                  const updatedProjects = [...projects];
-                  updatedProjects[index].image = uri;
-                  setProjects(updatedProjects);
-                })
-              }
-            >
-              {project.image ? (
-                <Image source={{ uri: project.image }} style={styles.projectImage} />
-              ) : (
-                <Text style={styles.imagePickerText}>Pick Project Image</Text>
-              )}
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              value={project.title}
-              onChangeText={(text) => {
-                const updatedProjects = [...projects];
-                updatedProjects[index].title = text;
-                setProjects(updatedProjects);
-              }}
-              placeholder="Project Title"
-            />
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={project.description}
-              onChangeText={(text) => {
-                const updatedProjects = [...projects];
-                updatedProjects[index].description = text;
-                setProjects(updatedProjects);
-              }}
-              placeholder="Project Description"
-              multiline
-            />
-          </View>
-        ))}
-        <TouchableOpacity style={styles.addButton} onPress={() => handleAddEntry(setProjects)}>
-          <Text style={styles.addButtonText}>Add Project</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Experience */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Experience</Text>
-        {experience.map((exp, index) => (
-          <View key={index} style={styles.projectContainer}>
-            <TouchableOpacity
-              style={styles.imagePicker}
-              onPress={() =>
-                handlePickImage((uri) => {
-                  const updatedExperience = [...experience];
-                  updatedExperience[index].image = uri;
-                  setExperience(updatedExperience);
-                })
-              }
-            >
-              {exp.image ? (
-                <Image source={{ uri: exp.image }} style={styles.projectImage} />
-              ) : (
-                <Text style={styles.imagePickerText}>Pick Experience Image</Text>
-              )}
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              value={exp.title}
-              onChangeText={(text) => {
-                const updatedExperience = [...experience];
-                updatedExperience[index].title = text;
-                setExperience(updatedExperience);
-              }}
-              placeholder="Experience Title"
-            />
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={exp.description}
-              onChangeText={(text) => {
-                const updatedExperience = [...experience];
-                updatedExperience[index].description = text;
-                setExperience(updatedExperience);
-              }}
-              placeholder="Experience Description"
-              multiline
-            />
-          </View>
-        ))}
-        <TouchableOpacity style={styles.addButton} onPress={() => handleAddEntry(setExperience)}>
-          <Text style={styles.addButtonText}>Add Experience</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.saveButton} onPress={uploadImagesAndSaveProfile}>
-        <Text style={styles.saveButtonText}>Save Profile</Text>
+    <>
+      <TouchableOpacity
+        style={styles.stickyBackButton}
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
-    </ScrollView>
+      <ScrollView contentContainerStyle={styles.container}>
+
+
+        <Text style={styles.title}>Setup Your Profile</Text>
+
+        {/* Profile Picture */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Profile Picture</Text>
+          <TouchableOpacity
+            style={styles.imagePicker}
+            onPress={() => handlePickImage((uri) => setProfileImage(uri))}
+          >
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Text style={styles.imagePickerText}>Pick a Profile Picture</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Username */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Username</Text>
+          <TextInput
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Enter your username"
+          />
+        </View>
+
+        {/* Role */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Role</Text>
+          <TextInput
+            style={styles.input}
+            value={role}
+            onChangeText={setRole}
+            placeholder="Enter your role"
+          />
+        </View>
+
+        {/* Date of Birth */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Date of Birth</Text>
+          <TextInput
+            style={styles.input}
+            value={dob}
+            onChangeText={setDob}
+            placeholder="YYYY-MM-DD"
+          />
+        </View>
+
+        {/* Bio */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Bio</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={bio}
+            onChangeText={setBio}
+            placeholder="Write a short bio"
+            multiline
+          />
+        </View>
+
+        {/* Projects */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Projects</Text>
+          {projects.map((project, index) => (
+            <View key={index} style={styles.projectContainer}>
+              <TouchableOpacity
+                style={styles.imagePicker}
+                onPress={() =>
+                  handlePickImage((uri) => {
+                    const updatedProjects = [...projects];
+                    updatedProjects[index].image = uri;
+                    setProjects(updatedProjects);
+                  })
+                }
+              >
+                {project.image ? (
+                  <Image source={{ uri: project.image }} style={styles.projectImage} />
+                ) : (
+                  <Text style={styles.imagePickerText}>Pick Project Image</Text>
+                )}
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                value={project.title}
+                onChangeText={(text) => {
+                  const updatedProjects = [...projects];
+                  updatedProjects[index].title = text;
+                  setProjects(updatedProjects);
+                }}
+                placeholder="Project Title"
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={project.description}
+                onChangeText={(text) => {
+                  const updatedProjects = [...projects];
+                  updatedProjects[index].description = text;
+                  setProjects(updatedProjects);
+                }}
+                placeholder="Project Description"
+                multiline
+              />
+            </View>
+          ))}
+          <TouchableOpacity style={styles.addButton} onPress={() => handleAddEntry(setProjects)}>
+            <Text style={styles.addButtonText}>Add Project</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Experience */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Experience</Text>
+          {experience.map((exp, index) => (
+            <View key={index} style={styles.projectContainer}>
+              <TouchableOpacity
+                style={styles.imagePicker}
+                onPress={() =>
+                  handlePickImage((uri) => {
+                    const updatedExperience = [...experience];
+                    updatedExperience[index].image = uri;
+                    setExperience(updatedExperience);
+                  })
+                }
+              >
+                {exp.image ? (
+                  <Image source={{ uri: exp.image }} style={styles.projectImage} />
+                ) : (
+                  <Text style={styles.imagePickerText}>Pick Experience Image</Text>
+                )}
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                value={exp.title}
+                onChangeText={(text) => {
+                  const updatedExperience = [...experience];
+                  updatedExperience[index].title = text;
+                  setExperience(updatedExperience);
+                }}
+                placeholder="Experience Title"
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={exp.description}
+                onChangeText={(text) => {
+                  const updatedExperience = [...experience];
+                  updatedExperience[index].description = text;
+                  setExperience(updatedExperience);
+                }}
+                placeholder="Experience Description"
+                multiline
+              />
+            </View>
+          ))}
+          <TouchableOpacity style={styles.addButton} onPress={() => handleAddEntry(setExperience)}>
+            <Text style={styles.addButtonText}>Add Experience</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={uploadImagesAndSaveProfile}>
+          <Text style={styles.saveButtonText}>Save Profile</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </>
   );
 };
-
-
 
 const styles = StyleSheet.create({
   loaderContainer: {
@@ -358,80 +366,210 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container: {
-    padding: 16,
+    padding: 20,
+    backgroundColor: '#f9f9f9',
     flexGrow: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 24,
+    color: '#333',
+    marginBottom: 20,
     textAlign: 'center',
+    marginTop: 84
   },
+  stickyBackButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    backgroundColor: '#fff',
+    zIndex: 10,
+    paddingVertical: 12,
+    paddingTop: 52,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonText: {
+    color: '#007bff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
   section: {
     marginBottom: 24,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#555',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 10,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
+    backgroundColor: '#f9f9f9',
+    color: '#333',
   },
   textArea: {
     height: 100,
+    textAlignVertical: 'top',
   },
   imagePicker: {
-    width: 200,
+    width: '100%',
     height: 200,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#e6e6e6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    borderRadius: 8,
+    // marginBottom: 12,
   },
   imagePickerText: {
-    color: '#007bff',
-    fontSize: 16,
+    color: '#888',
+    fontSize: 14,
   },
   profileImage: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 6,
   },
   projectContainer: {
     marginBottom: 16,
+    gap: 12
   },
   projectImage: {
-    width: 150,
-    height: 150,
-    resizeMode: 'contain',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 8,
+    marginBottom: 8,
   },
   addButton: {
     backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 4,
+    padding: 12,
+    borderRadius: 8,
     marginTop: 16,
+    alignItems: 'center',
   },
   addButtonText: {
     color: '#fff',
     fontSize: 16,
-    textAlign: 'center',
+    fontWeight: '600',
   },
   saveButton: {
     backgroundColor: '#28a745',
-    padding: 12,
-    borderRadius: 4,
+    padding: 16,
+    borderRadius: 8,
     marginTop: 24,
+    alignItems: 'center',
   },
   saveButtonText: {
     color: '#fff',
     fontSize: 18,
-    textAlign: 'center',
+    fontWeight: '700',
   },
 });
+
+
+// const styles = StyleSheet.create({
+//   loaderContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   container: {
+//     padding: 16,
+//     flexGrow: 1,
+//   },
+//   title: {
+//     fontSize: 24,
+//     fontWeight: 'bold',
+//     marginBottom: 24,
+//     textAlign: 'center',
+//   },
+//   section: {
+//     marginBottom: 24,
+//   },
+//   label: {
+//     fontSize: 16,
+//     fontWeight: 'bold',
+//     marginBottom: 8,
+//   },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: '#ccc',
+//     borderRadius: 4,
+//     padding: 10,
+//     fontSize: 16,
+//   },
+//   textArea: {
+//     height: 100,
+//   },
+//   imagePicker: {
+//     width: 200,
+//     height: 200,
+//     backgroundColor: '#f0f0f0',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     marginBottom: 16,
+//   },
+//   imagePickerText: {
+//     color: '#007bff',
+//     fontSize: 16,
+//   },
+//   profileImage: {
+//     width: 200,
+//     height: 200,
+//     resizeMode: 'contain',
+//   },
+//   projectContainer: {
+//     marginBottom: 16,
+//   },
+//   projectImage: {
+//     width: 150,
+//     height: 150,
+//     resizeMode: 'contain',
+//   },
+//   addButton: {
+//     backgroundColor: '#007bff',
+//     padding: 10,
+//     borderRadius: 4,
+//     marginTop: 16,
+//   },
+//   addButtonText: {
+//     color: '#fff',
+//     fontSize: 16,
+//     textAlign: 'center',
+//   },
+//   saveButton: {
+//     backgroundColor: '#28a745',
+//     padding: 12,
+//     borderRadius: 4,
+//     marginTop: 24,
+//   },
+//   saveButtonText: {
+//     color: '#fff',
+//     fontSize: 18,
+//     textAlign: 'center',
+//   },
+// });
 
 export default ProfileSetup;

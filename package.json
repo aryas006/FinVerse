@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "react-native-linear-gradient": "^2.8.3",
+    "react-native-reanimated": "^3.16.6"
+  },
+  "devDependencies": {
+    "@types/react-native-linear-gradient": "^2.3.1"
+  }
+}

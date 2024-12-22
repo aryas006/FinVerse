@@ -20,6 +20,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '@/supabaseClient';
 import { BlurView } from 'expo-blur';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TeamMember {
     id: string;
@@ -192,10 +193,65 @@ export default function Business() {
         }
     };
 
-    const handleFollow = () => {
-        setModalVisible(false);
-        Alert.alert('Followed', 'You are now following this startup!');
+    const handleFollow = async (startupId: number | undefined) => {
+        if (!startupId) {
+            Alert.alert('Error', 'Invalid startup ID.');
+            return;
+        }
+
+        try {
+            const authToken = await AsyncStorage.getItem('authToken');
+            if (!authToken) {
+                Alert.alert('Error', 'User not authenticated.');
+                return;
+            }
+
+            // Fetch current followers
+            const { data, error } = await supabase
+                .from('startups')
+                .select('follower, followers')
+                .eq('id', startupId)
+                .single();
+
+            if (error || !data) {
+                console.error('Error fetching followers:', error);
+                Alert.alert('Error', 'Unable to fetch followers.');
+                return;
+            }
+
+            let updatedFollowerList = data?.follower || [];
+            if (updatedFollowerList.includes(authToken)) {
+                Alert.alert('Info', 'You are already following this startup.');
+                return;
+            }
+
+            // Update the follower list and followers count
+            updatedFollowerList.push(authToken);
+            const updatedFollowerCount = (data.followers || 0) + 1;
+
+            const { error: updateError } = await supabase
+                .from('startups')
+                .update({
+                    follower: updatedFollowerList,
+                    followers: updatedFollowerCount,
+                })
+                .eq('id', startupId);
+
+            if (updateError) {
+                console.error('Error updating followers:', updateError);
+                Alert.alert('Error', 'Unable to follow the startup.');
+                return;
+            }
+
+            Alert.alert('Success', 'You are now following this startup!');
+        } catch (error) {
+            console.error('Unexpected error in handleFollow:', error);
+            Alert.alert('Error', 'An unexpected error occurred.');
+        }
     };
+
+
+
 
     const handleConnect = () => {
         setModalVisible(false);
@@ -373,12 +429,16 @@ export default function Business() {
                                 <Text style={styles.followersTextButton}>Follow</Text>
                             </TouchableOpacity> */}
                         <View style={styles.teamActionsContainer}>
-                            <TouchableOpacity style={styles.teamActionButton} >
+                            <TouchableOpacity
+                                style={styles.teamActionButton}
+                                onPress={() => handleFollow(Number(startup?.id))} // Convert to number
+                            >
                                 <Text style={styles.teamActionText}>Follow</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.teamActionButtonConnect} >
+
+                            {/* <TouchableOpacity style={styles.teamActionButtonConnect} >
                                 <Text style={styles.teamActionText}>Connect</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </View>
                     </View>
                     <View style={styles.line} />
@@ -415,9 +475,13 @@ export default function Business() {
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
                             <Text style={styles.modalTitle}>More Options</Text>
-                            <TouchableOpacity style={styles.modalButton} onPress={handleFollow}>
-                                <Text style={styles.modalButtonText}>Follow</Text>
+                            <TouchableOpacity
+                                style={styles.teamActionButton}
+                                onPress={() => handleFollow(Number(startup?.id))} // Convert to number
+                            >
+                                <Text style={styles.teamActionText}>Follow</Text>
                             </TouchableOpacity>
+
                             <TouchableOpacity style={styles.modalButton} onPress={handleConnect}>
                                 <Text style={styles.modalButtonText}>Connect</Text>
                             </TouchableOpacity>

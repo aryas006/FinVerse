@@ -101,8 +101,10 @@ export default function ChatList() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chats</Text>
-        <Ionicons name="chatbubble" size={24} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.headerTitle}>Back</Text>  
+        </TouchableOpacity>
+        {/* <Ionicons name="chatbubble" size={24} color="#fff" /> */}
       </View>
 
       {/* Chat List */}
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4f7fc',
-    marginTop: 30,
+    // marginTop: 30,
   },
   loaderContainer: {
     flex: 1,
@@ -142,6 +144,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#4a90e2',
     paddingVertical: 20,
+    paddingTop: 64,
     paddingHorizontal: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',

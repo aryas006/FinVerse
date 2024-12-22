@@ -78,15 +78,15 @@ const UserProfile: React.FC = () => {
   return (
     <>
       <TouchableOpacity
-              style={styles.stickyBackButton}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
+        style={styles.stickyBackButton}
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
       <ScrollView style={styles.container}>
-        <Image 
-          source={require('../../assets/images/backGround.png')} 
-          style={styles.backgroundImage} 
+        <Image
+          source={require('../../assets/images/backGround.png')}
+          style={styles.backgroundImage}
         />
         <View style={styles.header}>
           <View style={styles.profileImageContainer}>
@@ -144,8 +144,8 @@ const UserProfile: React.FC = () => {
                   createdAt={post.created_at}
                   likes={post.likes || 0}
                   comments={post.comments || 0}
-                  onLikeChange={() => {}} // No-op function
-                  onCommentChange={() => {}} // No-op function
+                  onLikeChange={() => { }} // No-op function
+                  onCommentChange={() => { }} // No-op function
                 />
               ))}
             </ScrollView>
@@ -165,8 +165,8 @@ const styles = StyleSheet.create({
   backgroundImage: {
     position: 'absolute',
     height: 220,
-    width: '100%', 
-    resizeMode: 'cover', 
+    width: '100%',
+    resizeMode: 'cover',
   },
   header: {
     marginTop: '40%',
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   joined: {
     fontSize: 16,
     color: 'gray',
-    marginBottom: 5, 
+    marginBottom: 5,
   },
   bio: {
     fontSize: 14,

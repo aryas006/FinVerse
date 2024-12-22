@@ -171,6 +171,12 @@ const UserProfile: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity
+              style={styles.stickyBackButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
       <Image 
         source={require('../../../assets/images/backGround.png')} 
         style={styles.backgroundImage} 
@@ -244,6 +250,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  stickyBackButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 10,
+    paddingVertical: 12,
+    paddingTop: 52,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
   },
   profileImageContainer: {
     marginLeft: 20,

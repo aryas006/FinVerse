@@ -6,6 +6,7 @@ import PostItem from '../Components/posts';
 import BottomNav from '../Components/BottomNav';
 import { Divider } from 'react-native-elements/dist/divider/Divider';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const FeedPage = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -92,9 +93,14 @@ const FeedPage = () => {
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <BlurView intensity={50} tint="light" style={styles.topNavBar}>
         <Text style={styles.header}>Home</Text>
-        <TouchableOpacity onPress={handleProfileNavigation}>
-          <Image source={require('../../assets/images/pp.jpg')} style={styles.profileIcon} />
-        </TouchableOpacity>
+        <View style={styles.topOps}>
+          <TouchableOpacity style={styles.chatIcon} onPress={() => router.push('/chat_list/cl')}>
+            <Ionicons name="chatbubble" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleProfileNavigation}>
+            <Image source={require('../../assets/images/pp.jpg')} style={styles.profileIcon} />
+          </TouchableOpacity>
+        </View>
       </BlurView>
 
       <ScrollView contentContainerStyle={styles.feedContainer}>
@@ -147,6 +153,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     zIndex: 1,
+  },
+  topOps: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  chatIcon: {
+    padding: 6,
+    backgroundColor: "#13375F",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 100
   },
   feedContainer: {
     padding: 15,

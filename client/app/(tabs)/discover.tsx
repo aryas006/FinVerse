@@ -10,7 +10,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import BottomNav from '../Components/BottomNav';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { supabase } from '@/supabaseClient';
 // import { fetchStartups } from '../Components/FetchStartups';
 
@@ -221,233 +221,240 @@ const Discover = () => {
 
   return (
     <>
-    
-    <ScrollView style={styles.container}>
+
+      <ScrollView style={styles.container}>
         <View style={styles.topNavBar}>
-            <Text style={styles.header}>Discover</Text>
-            <Image 
-                source={require('../../assets/images/pp.jpg')}
-                style={styles.profileIcon}
-            />
+          <Text style={styles.header}>Discover</Text>
+          <Image
+            source={require('../../assets/images/pp.jpg')}
+            style={styles.profileIcon}
+          />
         </View>
 
-      {/* Events Section */}
-      <Text style={styles.subHeader}>Mumbai</Text>
-      <Text style={styles.sectionTitle}>Popular Events</Text>
-      <ScrollView 
-        style={styles.eventsContainer} 
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {groupedEvents.map((column, columnIndex) => (
-          <View key={`column-${columnIndex}`} style={styles.eventColumn}>
-            {column.map((event) => (
-              <TouchableOpacity
-                key={event.id}
-                style={styles.eventItem}
-                onPress={() => router.push(`/business/${event.id}`)}
-              >
-                <Image
+        {/* Events Section */}
+        <Text style={styles.subHeader}>Mumbai</Text>
+        <Text style={styles.sectionTitle}>Popular Events</Text>
+        <ScrollView
+          style={styles.eventsContainer}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        >
+          {groupedEvents.map((column, columnIndex) => (
+            <View key={`column-${columnIndex}`} style={styles.eventColumn}>
+              {column.map((event) => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.eventItem}
+                // onPress={() => router.push("/events/[id]")}
+                >
+                  <Image
                     source={
-                        typeof event.image === 'string'
+                      typeof event.image === 'string'
                         ? { uri: event.image } // Handle remote images
                         : event.image // Handle local images (require)
                     }
                     style={styles.eventImage}
-                />
-                <View style={styles.eventText}>
-                  <Text style={styles.eventOrganizer}>{event.organizer}</Text>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <View style={styles.eventBook}>
-                    <Text style={styles.eventTime}>{event.time}</Text>
-                    {/* <TouchableOpacity style={styles.eventButton}>
+                  />
+
+                  <View style={styles.eventText}>
+                    <Link href={{
+                      pathname: '/events/[id]',
+                      params: { id: event.id }
+                    }}>
+                      <Text style={styles.eventOrganizer}>{event.organizer}</Text>
+                    </Link>
+                    <Text style={styles.eventTitle}>{event.title}</Text>
+                    <View style={styles.eventBook}>
+                      <Text style={styles.eventTime}>{event.time}</Text>
+                      {/* <TouchableOpacity style={styles.eventButton}>
                         <Text style={styles.eventCalendar}>Add to Calendar</Text>
                     </TouchableOpacity> */}
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))}
-      </ScrollView>
 
-      {/* Startups Section */}
-      <Text style={styles.subHeader}>Top Startups</Text>
-      <Text style={styles.sectionTitle}>Popular Innovations</Text>
-      <ScrollView style={styles.startupsList} horizontal>
-        {groupedStartUps.map((column, columnIndex) => (
-          <View key={`column-${columnIndex}`} style={styles.startupMapper}>
-            {column.map((startup) => (
-              <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => router.push(`/business/${startup.id}`)}>
-                <Image
-                  source={{ uri: startup.image }} // Display logo
-                  style={styles.startupImage}
-                />
-                <View style={styles.startupText}>
-                  <Text style={styles.startupCreator}>{startup.creator}</Text>
-                  <Text style={styles.startupName}>{startup.name}</Text>
-                  <Text style={styles.startupDescription}>{startup.description}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))}
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Startups Section */}
+        <Text style={styles.subHeader}>Top Startups</Text>
+        <Text style={styles.sectionTitle}>Popular Innovations</Text>
+        <ScrollView style={styles.startupsList} horizontal>
+          {groupedStartUps.map((column, columnIndex) => (
+            <View key={`column-${columnIndex}`} style={styles.startupMapper}>
+              {column.map((startup) => (
+                <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => router.push(`/business/${startup.id}`)}>
+                  <Image
+                    source={{ uri: startup.image }} // Display logo
+                    style={styles.startupImage}
+                  />
+                  <View style={styles.startupText}>
+                    <Text style={styles.startupCreator}>{startup.creator}</Text>
+                    <Text style={styles.startupName}>{startup.name}</Text>
+                    <Text style={styles.startupDescription}>{startup.description}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
       </ScrollView>
-    </ScrollView>
-    <BottomNav></BottomNav>
+      <BottomNav></BottomNav>
     </>
   );
 };
 
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: 'white',
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
     //   paddingLeft: 28,
-      marginTop: 32,
-    },
-    topNavBar: {
-        flexDirection: "row",
-        width: "100%",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-        paddingHorizontal: 28
-    },
-    header: {
-      fontSize: 32,
+    marginTop: 32,
+  },
+  topNavBar: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingHorizontal: 28
+  },
+  header: {
+    fontSize: 32,
     //   fontWeight: 'bold',
-      marginTop: 20,
-      fontFamily: 'Raleway-Regular'
-    },
-    profileIcon: {
-        height: 40,
-        width: 40,
-        borderRadius: 100
-    },
-    subHeader: {
-      fontSize: 22,
-      color: '#000',
-      fontFamily: 'Raleway-SemiBold',
-      marginTop: 24,
-      paddingHorizontal: 28
-    },
-    sectionTitle: {
-      fontSize: 18,
+    marginTop: 20,
+    fontFamily: 'Raleway-Regular'
+  },
+  profileIcon: {
+    height: 40,
+    width: 40,
+    borderRadius: 100
+  },
+  subHeader: {
+    fontSize: 22,
+    color: '#000',
+    fontFamily: 'Raleway-SemiBold',
+    marginTop: 24,
+    paddingHorizontal: 28
+  },
+  sectionTitle: {
+    fontSize: 18,
     //   fontWeight: 'bold',
-      color: '#939393',
-      fontFamily: 'Raleway-Medium',
+    color: '#939393',
+    fontFamily: 'Raleway-Medium',
     //   marginTop: 20,
-        paddingHorizontal: 28
-    },
-    eventsContainer: {
-      flexDirection: 'row',
-      marginTop: 10,
-      paddingLeft: 28
-    },
-    eventColumn: {
-      flex: 1,
-      marginRight: 15,
-    },
-    eventItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 15,
+    paddingHorizontal: 28
+  },
+  eventsContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    paddingLeft: 28
+  },
+  eventColumn: {
+    flex: 1,
+    marginRight: 15,
+  },
+  eventItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
     //   backgroundColor: '#f8f8f8',
-      borderRadius: 8,
+    borderRadius: 8,
     //   padding: 10,
-      height: 100, // Set consistent height for each event
-      width: 300, // Increased width for better layout
-    },
-    eventImage: {
-      width: 80, // Increased width of the image
-      height: 80, // Ensure consistent height for the image
-      borderRadius: 10,
-      marginRight: 10,
-    },
-    eventText: {
-      flex: 1,
-      flexDirection: "column",
-      justifyContent: "space-evenly",
-      height: "100%"
-    },
-    eventOrganizer: {
-      fontSize: 12,
-      color: '#000',
-      fontWeight: "300",
-      fontFamily: 'Raleway-Light'
-    },
-    eventTitle: {
-      fontSize: 16,
-      fontFamily: 'Raleway-Medium',
-    },
-    eventBook: {
-        flexDirection: "row",
-        width: "100%",
-        justifyContent: "space-between",
-        alignItems: "center"
-    },
-    eventTime: {
-      fontSize: 12,
-      color: '#000',
-      fontWeight: "200",
-      fontFamily: 'Raleway-Light'
-    },
-    eventButton: {
-        backgroundColor: '#373839',
-        opacity: 0.75,
-        paddingHorizontal: 6,
-        paddingVertical: 4,
-        borderRadius: 4
-    },
-    eventCalendar: {
-        fontFamily: 'Raleway-Normal',
-        fontSize: 10,
-        color: '#fff'
-    },
-    startupsList: {
-      marginTop: 20,
-      flexDirection: 'row',
-      paddingLeft : 28,
-    },
-    startupMapper: {
-        flex: 1,
-    },
-    startupItem: {
-      flexDirection: 'row',
-      marginBottom: 15,
-      height: 140,
-      width: 300,
-      marginRight: 15
-    },
-    startupImage: {
-      width: 120,
-      height: 120,
-      borderRadius: 10,
-      marginRight: 10,
-    },
-    startupText: {
-      flex: 1,
-    },
-    startupCreator: {
-        fontSize: 12,
-        color: '#000',
-        fontWeight: "300",
-        fontFamily: 'Raleway-Light'
-    },
-    startupName: {
-        fontSize: 16,
-        fontFamily: 'Raleway-Medium',
-        marginBottom: 4
-    },
-    startupDescription: {
-        fontSize: 10,
-        color: '#000',
-        fontWeight: "300",
-        fontFamily: 'Raleway-Light'
-    },
-  });
-  
+    height: 100, // Set consistent height for each event
+    width: 300, // Increased width for better layout
+  },
+  eventImage: {
+    width: 80, // Increased width of the image
+    height: 80, // Ensure consistent height for the image
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  eventText: {
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "space-evenly",
+    height: "100%"
+  },
+  eventOrganizer: {
+    fontSize: 12,
+    color: '#000',
+    fontWeight: "300",
+    fontFamily: 'Raleway-Light'
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontFamily: 'Raleway-Medium',
+  },
+  eventBook: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
+  eventTime: {
+    fontSize: 12,
+    color: '#000',
+    fontWeight: "200",
+    fontFamily: 'Raleway-Light'
+  },
+  eventButton: {
+    backgroundColor: '#373839',
+    opacity: 0.75,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 4
+  },
+  eventCalendar: {
+    fontFamily: 'Raleway-Normal',
+    fontSize: 10,
+    color: '#fff'
+  },
+  startupsList: {
+    marginTop: 20,
+    flexDirection: 'row',
+    paddingLeft: 28,
+  },
+  startupMapper: {
+    flex: 1,
+  },
+  startupItem: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    height: 140,
+    width: 300,
+    marginRight: 15
+  },
+  startupImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  startupText: {
+    flex: 1,
+  },
+  startupCreator: {
+    fontSize: 12,
+    color: '#000',
+    fontWeight: "300",
+    fontFamily: 'Raleway-Light'
+  },
+  startupName: {
+    fontSize: 16,
+    fontFamily: 'Raleway-Medium',
+    marginBottom: 4
+  },
+  startupDescription: {
+    fontSize: 10,
+    color: '#000',
+    fontWeight: "300",
+    fontFamily: 'Raleway-Light'
+  },
+});
+
 
 export default Discover;

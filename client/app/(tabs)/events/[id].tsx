@@ -9,8 +9,13 @@ import {
   ScrollView,
 } from 'react-native';
 import BottomNav from '@/app/Components/BottomNav';
+import { useNavigation, useRouter } from 'expo-router';
 
-const Events: React.FC = () => {
+
+
+const Events: React.FC = ({ }) => {
+  const router = useRouter();
+  const navigation = useNavigation();
   const eventData = [
     {
       id: '1',
@@ -39,19 +44,37 @@ const Events: React.FC = () => {
   ];
 
   const renderEvent = ({ item }: { item: Event }) => (
-    <View style={styles.eventContainer}>
-      <Image source={{ uri: item.image }} style={styles.eventImage} />
-      <View style={styles.eventDetails}>
-        <Text style={styles.eventDate}>{item.date}</Text>
-        <Text style={styles.eventTitle}>{item.title}</Text>
-        <Text style={styles.eventArtist}>{item.artist}</Text>
-        <Text style={styles.eventTime}>{item.time}</Text>
+    <TouchableOpacity
+      style={styles.eventContainer}
+      onPress={() => router.push(`/?id=${item.id}`)}
+    >
+      <View style={styles.eventContainer}>
+        <Image source={{ uri: item.image }} style={styles.eventImage} />
+        <View style={styles.eventDetails}>
+          <Text style={styles.eventDate}>{item.date}</Text>
+          <Text style={styles.eventTitle}>{item.title}</Text>
+          <Text style={styles.eventArtist}>{item.artist}</Text>
+          <Text style={styles.eventTime}>{item.time}</Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
+      <Text style={{
+        color: '#000',
+        fontSize: 16,
+        padding: 10,
+        backgroundColor: '#f9f9f9',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+        marginTop: 40
+      }}
+        onPress={() => navigation.goBack()}
+      >
+        Back
+      </Text>
       {/* Scrollable Content */}
       <ScrollView style={styles.content}>
         {/* Header Section */}

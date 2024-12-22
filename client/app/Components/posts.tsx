@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,8 +11,11 @@ import {
   Button,
 } from 'react-native';
 import { Icon } from 'react-native-elements';
+import { supabase } from '@/supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type PostItemProps = {
+  postId: number;
   profileImage: string;
   userName: string;
   content: string;
@@ -20,9 +23,11 @@ type PostItemProps = {
   createdAt: string;
   likes: number;
   comments: number;
+  onLikeChange: (postId: number, newLikes: number) => void; // Callback to update likes dynamically
 };
 
 const PostItem: React.FC<PostItemProps> = ({
+  postId,
   profileImage,
   userName,
   content,
@@ -30,46 +35,217 @@ const PostItem: React.FC<PostItemProps> = ({
   createdAt,
   likes,
   comments,
+  onLikeChange,
 }) => {
   const [isHeartFilled, setIsHeartFilled] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [commentText, setCommentText] = useState('');
 
-  const handleHeartPress = () => {
-    setIsHeartFilled(!isHeartFilled);
+  // Check if the post is liked by the user when the component mounts
+  useEffect(() => {
+    const checkIfLiked = async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const user = data?.user;
+  
+        if (user) {
+          const userId = user.id;
+  
+          // Check if the user has already liked the post
+          const { data: likeData, error: likeError } = await supabase
+            .from('likes')
+            .select('id')
+            .eq('post_id', postId) // Ensure we check based on post_id
+            .eq('user_id', userId); // Ensure we check based on user_id
+  
+          if (likeError) {
+            console.error('Error checking like status:', likeError);
+            return;
+          }
+  
+          // Set the heart state based on whether the user has liked the post
+          setIsHeartFilled(likeData.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking like status:', error);
+      }
+    };
+
+    checkIfLiked();
+  }, [postId]);
+
+  const handleHeartPress = async () => {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
+  
+      if (user) {
+        const userId = user.id;
+  
+        // Check if the user has already liked the post
+        const { data: likeData, error: likeError } = await supabase
+          .from('likes')
+          .select('id')
+          .eq('post_id', postId) // Ensure we check based on post_id
+          .eq('user_id', userId); // Ensure we check based on user_id
+  
+        if (likeError) {
+          console.error('Error checking like status:', likeError);
+          return;
+        }
+  
+        // If likeData is empty, it means the user has not liked the post yet
+        if (likeData.length === 0) {
+          // Insert new like into the likes table
+          const { error: insertError } = await supabase.from('likes').insert([{ post_id: postId, user_id: userId }]);
+  
+          if (insertError) {
+            console.error('Error inserting like:', insertError);
+            return;
+          }
+  
+          // Now update the likes count in the posts table (ensure the likes count is a non-negative number)
+          const { data: postData, error: postError } = await supabase
+            .from('posts')
+            .select('likes')
+            .eq('id', postId)
+            .single();
+  
+          if (postError) {
+            console.error('Error fetching post data:', postError);
+            return;
+          }
+  
+          // Increment the like count by 1
+          const newLikesCount = (postData?.likes || 0) + 1;
+  
+          // Update the likes count in the posts table
+          const { error: updatePostError } = await supabase
+            .from('posts')
+            .update({ likes: newLikesCount })
+            .eq('id', postId);
+  
+          if (updatePostError) {
+            console.error('Error updating like count:', updatePostError);
+            return;
+          }
+  
+          // Update UI to show the new like count
+          onLikeChange(postId, newLikesCount);
+          setIsHeartFilled(true); // Change heart icon to filled
+        } else if (likeData.length === 1) {
+          // If the post is already liked, remove the like (unlike the post)
+          const { error: deleteError } = await supabase
+            .from('likes')
+            .delete()
+            .match({ id: likeData[0].id }); // Match the like by its unique ID
+  
+          if (deleteError) {
+            console.error('Error deleting like:', deleteError);
+            return;
+          }
+  
+          // Now decrement the likes count in the posts table (ensure the count doesn't go below 0)
+          const { data: postData, error: postError } = await supabase
+            .from('posts')
+            .select('likes')
+            .eq('id', postId)
+            .single();
+  
+          if (postError) {
+            console.error('Error fetching post data:', postError);
+            return;
+          }
+  
+          // Ensure the like count doesn't go below 0
+          const newLikesCount = Math.max((postData?.likes || 0) - 1, 0);
+  
+          // Update the likes count in the posts table
+          const { error: updatePostError } = await supabase
+            .from('posts')
+            .update({ likes: newLikesCount })
+            .eq('id', postId);
+  
+          if (updatePostError) {
+            console.error('Error updating like count:', updatePostError);
+            return;
+          }
+  
+          // Update UI to show the new like count
+          onLikeChange(postId, newLikesCount);
+          setIsHeartFilled(false); // Change heart icon to outline
+        } else {
+          console.error('Unexpected number of like records:', likeData.length);
+        }
+      } else {
+        console.log('User is not authenticated');
+        // Optionally, redirect the user to a login screen if not authenticated
+      }
+    } catch (error) {
+      console.error('Error handling like:', error);
+    }
   };
+  
 
   const handleCommentPress = () => {
     setIsModalVisible(true);
   };
 
-  const handleCommentSubmit = () => {
-    console.log('Submitted Comment:', commentText);
-    setCommentText('');
-    setIsModalVisible(false);
+  const handleCommentSubmit = async () => {
+    try {
+      // Retrieve the user_id from AsyncStorage (authToken)
+      const authToken = await AsyncStorage.getItem('authToken');
+      
+      if (authToken) {
+        const userId = authToken; // authToken directly holds the user_id
+  
+        // Proceed with comment submission logic
+        const { error } = await supabase.from('comments').insert([
+          {
+            post_id: postId,
+            user_id: userId, // Use userId directly from AsyncStorage
+            content: commentText,
+          },
+        ]);
+  
+        if (error) {
+          console.error('Error submitting comment:', error);
+          return;
+        }
+  
+        setCommentText(''); // Clear the input field after comment submission
+        setIsModalVisible(false); // Close the modal after submission
+      } else {
+        console.log('User is not authenticated');
+      }
+    } catch (error) {
+      console.error('Error handling comment submission:', error);
+    }
   };
+  
 
   const handleCommentCancel = () => {
     setCommentText('');
     setIsModalVisible(false);
   };
-
+  console.log(postId);
   return (
-
     <View style={styles.postContainer}>
-      <Link href={{
-        pathname: '/(tabs)/post/[id]',
-        params: {
-          id: '1',
-          profileImage: profileImage,
-          userName: userName,
-          content: content,
-          postImage: postImage,
-          createdAt: createdAt,
-          likes: likes,
-          comments: comments,
-        },
-      }}>
+      <Link
+        href={{
+          pathname: '/(tabs)/post/[id]',
+          params: {
+            id: postId,
+            profileImage: profileImage,
+            userName: userName,
+            content: content,
+            postImage: postImage,
+            createdAt: createdAt,
+            likes: likes,
+            comments: comments,
+          },
+        }}
+      >
         <View style={styles.header}>
           <Image source={{ uri: profileImage }} style={styles.profileImage} />
           <View style={styles.userInfo}>
@@ -127,7 +303,6 @@ const PostItem: React.FC<PostItemProps> = ({
         </View>
       </Modal>
     </View>
-
   );
 };
 
@@ -196,7 +371,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     width: '100%',
     bottom: 0,
-
   },
   modalContent: {
     width: '100%',

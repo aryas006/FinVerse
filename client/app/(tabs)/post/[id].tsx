@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -13,17 +13,121 @@ import {
 } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/supabaseClient'; // Assuming you have supabase configured
 
 const PostDetail: React.FC = () => {
-    const { profileImage, userName, content, postImage, createdAt, likes, comments } = useLocalSearchParams();
+    const { profileImage, userName, content, postImage, createdAt, likes, comments, id } = useLocalSearchParams();
     const [commentText, setCommentText] = useState('');
-    const [commentList, setCommentList] = useState<string[]>([]);
+    const [commentList, setCommentList] = useState<any[]>([]); // Store array of comments with username
     const navigation = useNavigation();
 
-    const handleAddComment = () => {
-        if (commentText.trim()) {
-            setCommentList([commentText, ...commentList]);
-            setCommentText('');
+    useEffect(() => {
+        const fetchComments = async () => {
+            try {
+                if (!id) {
+                    console.log('Error: postId is undefined');
+                    return;
+                }
+
+                // Get user_id from AsyncStorage
+                const authToken = await AsyncStorage.getItem('authToken');
+                if (!authToken) {
+                    console.log('User is not authenticated');
+                    return;
+                }
+
+                // Debugging - Check values of authToken and postId
+                console.log('authToken:', authToken);
+                console.log('postId:', id);
+
+                // Fetch comments for the post from the 'comments' table
+                const { data: commentsData, error: commentsError } = await supabase
+                    .from('comments')
+                    .select('content, user_id')
+                    .eq('post_id', id);
+
+                if (commentsError) {
+                    console.error('Error fetching comments:', commentsError);
+                    return;
+                }
+
+                if (commentsData && commentsData.length > 0) {
+                    // Fetch username for each comment using user_id
+                    const commentsWithUsernames = await Promise.all(
+                        commentsData.map(async (comment) => {
+                            const { data: userData, error: userError } = await supabase
+                                .from('profiles')
+                                .select('username')
+                                .eq('user_id', comment.user_id)
+                                .single();
+
+                            if (userError) {
+                                console.error('Error fetching username:', userError);
+                                return;
+                            }
+
+                            return {
+                                content: comment.content,
+                                userName: userData?.username || 'Anonymous',
+                            };
+                        })
+                    );
+
+                    // Filter out undefined results
+                    setCommentList(commentsWithUsernames.filter((comment) => comment !== undefined));
+                } else {
+                    console.log('No comments available for this post');
+                }
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+            }
+        };
+
+        if (id) {
+            fetchComments();
+        } else {
+            console.log('Error: postId is undefined');
+        }
+    }, [id]); // Re-fetch when postId changes
+
+    const handleAddComment = async () => {
+        try {
+            if (!commentText.trim()) {
+                console.log('Comment text is empty');
+                return;
+            }
+
+            // Get user_id from AsyncStorage
+            const authToken = await AsyncStorage.getItem('authToken');
+            if (!authToken) {
+                console.log('User is not authenticated');
+                return;
+            }
+
+            // Debugging - Check values of authToken and commentText
+            console.log('authToken:', authToken);
+            console.log('commentText:', commentText);
+
+            // Insert comment into the 'comments' table
+            const { error } = await supabase.from('comments').insert([
+                {
+                    post_id: id,
+                    user_id: authToken, // Use user_id from AsyncStorage
+                    content: commentText,
+                },
+            ]);
+
+            if (error) {
+                console.error('Error submitting comment:', error);
+                return;
+            }
+
+            setCommentText(''); // Clear the input field after comment submission
+            // Optionally, fetch updated comments after adding a new comment
+            fetchComments(); // Re-fetch comments to show the newly added one
+        } catch (error) {
+            console.error('Error handling comment submission:', error);
         }
     };
 
@@ -86,7 +190,8 @@ const PostDetail: React.FC = () => {
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => (
                         <View style={styles.commentItem}>
-                            <Text style={styles.commentText}>{item}</Text>
+                            <Text style={styles.commentUserName}>{item.userName}</Text>
+                            <Text style={styles.commentText}>{item.content}</Text>
                         </View>
                     )}
                     ListEmptyComponent={<Text style={styles.noComments}>No comments yet. Be the first to comment!</Text>}
@@ -157,39 +262,44 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     sectionTitle: {
-        fontSize: 18,
         fontWeight: 'bold',
+        fontSize: 18,
+        color: '#14171A',
         marginBottom: 10,
     },
     addComment: {
         flexDirection: 'row',
+        marginBottom: 15,
         alignItems: 'center',
-        marginBottom: 20,
     },
     input: {
         flex: 1,
-        borderColor: '#e1e8ed',
+        height: 40,
+        borderColor: '#ccc',
         borderWidth: 1,
-        borderRadius: 5,
-        padding: 10,
+        borderRadius: 20,
+        paddingLeft: 10,
         marginRight: 10,
     },
     commentItem: {
-        backgroundColor: '#f5f8fa',
-        padding: 10,
-        borderRadius: 8,
         marginBottom: 10,
+    },
+    commentUserName: {
+        fontWeight: 'bold',
+        fontSize: 14,
     },
     commentText: {
         fontSize: 14,
         color: '#14171A',
     },
     noComments: {
-        fontSize: 14,
+        fontStyle: 'italic',
         color: '#657786',
-        textAlign: 'center',
-        marginTop: 10,
     },
 });
 
 export default PostDetail;
+function fetchComments() {
+    throw new Error('Function not implemented.');
+}
+

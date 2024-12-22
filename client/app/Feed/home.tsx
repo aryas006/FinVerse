@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, View, ActivityIndicator, Text, Image, TouchableOpacity } from 'react-native';
 import { supabase } from '@/supabaseClient';
-import { BlurView } from 'expo-blur'; // Import BlurView
+import { BlurView } from 'expo-blur';
 import PostItem from '../Components/posts';
 import BottomNav from '../Components/BottomNav';
 import { Divider } from 'react-native-elements/dist/divider/Divider';
@@ -14,7 +14,7 @@ const FeedPage = () => {
   const router = useRouter();
 
   const handleProfileNavigation = () => {
-    router.push('/Profile/profilePage'); // Replace '/profile' with your actual profile page route
+    router.push('/Profile/profilePage');
   };
 
   const defaultProfileImageUrl = 'https://xwfgazxfjsoznyemwxeb.supabase.co/storage/v1/object/public/startups/st_a.png';
@@ -28,7 +28,6 @@ const FeedPage = () => {
 
       if (error) throw error;
 
-      // Fetch profile image for each post based on user_id
       const postsWithImages = await Promise.all(data.map(async (post: any) => {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -37,8 +36,7 @@ const FeedPage = () => {
           .single();
 
         if (profileError) {
-         
-          post.profile_image = defaultProfileImageUrl; // Default to anonymous image
+          post.profile_image = defaultProfileImageUrl;
         } else {
           post.profile_image = profileData?.profile_image || defaultProfileImageUrl;
         }
@@ -49,9 +47,12 @@ const FeedPage = () => {
       setPosts(postsWithImages);
       setLoading(false);
     } catch (error) {
-     
       setLoading(false);
     }
+  };
+
+  const handleLikeChange = (postId: number, newLikes: number) => {
+    setPosts(posts.map(post => post.id === postId ? { ...post, likes: newLikes } : post));
   };
 
   useEffect(() => {
@@ -71,14 +72,11 @@ const FeedPage = () => {
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <BlurView intensity={50} tint="light" style={styles.topNavBar}>
         <Text style={styles.header}>Home</Text>
-        
         <TouchableOpacity onPress={handleProfileNavigation}>
-        <Image
-          source={require('../../assets/images/pp.jpg')}
-          style={styles.profileIcon}
-        />
-       </TouchableOpacity>
+          <Image source={require('../../assets/images/pp.jpg')} style={styles.profileIcon} />
+        </TouchableOpacity>
       </BlurView>
+
       <ScrollView contentContainerStyle={styles.feedContainer}>
         {posts.length === 0 ? (
           <Text>No posts available</Text>
@@ -86,13 +84,15 @@ const FeedPage = () => {
           posts.map((post: any) => (
             <React.Fragment key={post.id}>
               <PostItem
-                profileImage={post.profile_image} // Use the fetched profile image URL
-                userName={post.username || 'Anonymous'} // Default to 'Anonymous' if no username
+                postId={post.id}
+                profileImage={post.profile_image}
+                userName={post.username || 'Anonymous'}
                 content={post.content}
                 postImage={post.image_url}
                 createdAt={post.created_at}
                 likes={post.likes || 0}
                 comments={post.comments || 0}
+                onLikeChange={handleLikeChange} // Pass callback to update likes
               />
               <Divider />
             </React.Fragment>
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingTop: 76,
     paddingVertical: 20,
-    position: "absolute", // Use absolute positioning
+    position: "absolute",
     top: 0,
-    zIndex: 1, // Ensure it stays above other content
+    zIndex: 1,
   },
   feedContainer: {
     padding: 15,
-    paddingTop: 120, // Add padding to prevent overlap with the navbar
-    paddingBottom: 100, // Add padding to prevent overlap with the bottom nav
+    paddingTop: 120,
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,

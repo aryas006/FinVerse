@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { supabase } from '@/supabaseClient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,18 +20,16 @@ const Login = ({ navigation }: any) => {
         throw error;
       }
 
-      // Storing the authentication ID (session) and username in AsyncStorage
       const authSession = data?.session;
       const authId = data.user.id;
-      const username = data.user.user_metadata?.username; // Assuming username is stored in user metadata
+      const username = data.user.user_metadata?.username;
 
       if (authSession) {
-        await AsyncStorage.setItem('authToken', authId);  // Storing user id as 'authToken'
-        await AsyncStorage.setItem('username', username || '');  // Storing username
+        await AsyncStorage.setItem('authToken', authId);
+        await AsyncStorage.setItem('username', username || '');
 
         Alert.alert('Login Successful', 'You are now logged in.');
-
-        router.push('/Feed/home'); // Navigate to the profile setup screen
+        router.push('/Feed/home');
       } else {
         throw new Error('Session not found');
       }
@@ -42,77 +40,102 @@ const Login = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Welcome Back!</Text>
+      <Text style={styles.subtitle}>Please login to continue</Text>
+
       <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Enter your email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
+
       <Text style={styles.label}>Password</Text>
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Enter your password"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity
-        onPress={handleLogin}
-        style={styles.loginButton}
-      >
+
+      <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
-      
+
+      <Text style={styles.footerText}>
+        Don’t have an account?{' '}
+        <Text style={styles.signUpText} onPress={() => router.push('/auth/Signup')}>Sign up</Text>
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    padding: 16 
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+    padding: 16,
   },
-  title: { 
-    fontSize: 48, 
-    marginBottom: 20, 
-    textAlign: 'center', 
-    fontFamily: 'Raleway-Medium',
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#13375F',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4F4F4F',
+    marginBottom: 24,
   },
   label: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    alignSelf: "flex-start",
-    backgroundColor: "#13375F",
-    borderTopRightRadius: 6,
-    borderTopLeftRadius: 6,
-    color: 'white'
-    
+    alignSelf: 'flex-start',
+    marginLeft: 16,
+    fontSize: 14,
+    color: '#13375F',
+    marginBottom: 4,
   },
-  input: { 
-    borderWidth: 1, 
-    padding: 14, 
-    marginBottom: 16, 
-    borderRadius: 4,
-    borderColor: '#13375F'
+  input: {
+    width: '90%',
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#dcdfe3',
+    borderRadius: 8,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   loginButton: {
-    backgroundColor: "#13375F",
-    paddingVertical: 22,
-    borderRadius: 6,
-    marginTop: 32
+    width: '90%',
+    backgroundColor: '#13375F',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
   },
   loginText: {
-    color: "white",
-    alignItems: "center",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginHorizontal: "auto"
-  }
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footerText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#4F4F4F',
+  },
+  signUpText: {
+    color: '#13375F',
+    fontWeight: '600',
+  },
 });
 
 export default Login;

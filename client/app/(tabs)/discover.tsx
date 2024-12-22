@@ -30,7 +30,9 @@ interface Startup {
   creator: string;
 }
 
-
+const handleEditNav = () => {
+  router.push('/Profile/profilePage'); // Replace with your actual profile setup page route
+};
 
 const groupEvents = (data: Event[], itemsPerColumn: number) => {
   const columns: Event[][] = [];
@@ -184,10 +186,12 @@ const Discover = () => {
       <ScrollView style={styles.container}>
         <View style={styles.topNavBar}>
           <Text style={styles.header}>Discover</Text>
+          <Link href = '/Profile/profilePage'>
           <Image
-            source={require('../../assets/images/pp.jpg')}
+            source={require('../../assets/images/pp.jpg') }
             style={styles.profileIcon}
           />
+          </Link>
         </View>
 
         {/* Events Section */}

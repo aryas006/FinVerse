@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native'; // Import navigation h
 const CreatePost = () => {
   const [content, setContent] = useState('');
   const [userId, setUserId] = useState<string>(''); // User ID will be fetched based on the authToken
+  const [username, setUsername] = useState<string>(''); // Store username
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const navigation = useNavigation(); // Initialize navigation
@@ -26,7 +27,18 @@ const CreatePost = () => {
     try {
       const authToken = await AsyncStorage.getItem('authToken');
       if (authToken) {
-        setUserId(authToken); // Save user ID
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('user_id', authToken)
+          .single();
+        if (error) {
+          console.error('Error fetching user data:', error.message);
+          Alert.alert('Error', 'Failed to fetch user data.');
+        } else {
+          setUserId(authToken);
+          setUsername(data?.username || 'Anonymous');
+        }
       }
     } catch (error) {
       console.error('Error fetching authToken:', error);
@@ -62,7 +74,7 @@ const CreatePost = () => {
     }
 
     const { error } = await supabase.from('posts').insert([
-      { user_id: userId, content, image_url: imageUrl },
+      { user_id: userId, username: username, content, image_url: imageUrl },
     ]);
 
     if (error) {
@@ -76,7 +88,7 @@ const CreatePost = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
@@ -85,16 +97,22 @@ const CreatePost = () => {
         <Text style={styles.backButtonText}>← Back</Text>
       </TouchableOpacity>
 
-      {/* Form */}
       <View style={styles.card}>
-        <Text style={styles.title}>Create Post</Text>
-
+        <Text style={styles.label}>What's on your mind?</Text>
         <TextInput
           style={styles.input}
-          placeholder="What's on your mind?"
+          placeholder="Write something..."
           multiline
           value={content}
           onChangeText={setContent}
+        />
+
+        <Text style={styles.label}>Username</Text>
+        <TextInput
+          style={[styles.input, styles.disabledInput]}
+          placeholder="Loading..."
+          value={username || 'Loading...'}
+          editable={false}
         />
 
         <TouchableOpacity onPress={pickImage} style={styles.button}>
@@ -120,30 +138,22 @@ const CreatePost = () => {
           <Text style={styles.postButtonText}>Post</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexGrow: 1,
+    padding: 16,
     backgroundColor: '#f8f9fa',
-    paddingHorizontal: 16,
   },
   backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    marginRight: 'auto',
+    marginBottom: 16,
     paddingVertical: 10,
     paddingHorizontal: 20,
     backgroundColor: '#e9ecef',
     borderRadius: 8,
-
-    justifyContent: 'center', 
-    alignItems: 'center', 
   },
   backButtonText: {
     fontSize: 16,
@@ -152,22 +162,20 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
+    borderRadius: 8,
+    padding: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
     marginBottom: 16,
-    textAlign: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
   },
   input: {
     height: 100,
@@ -178,7 +186,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 14,
     backgroundColor: '#fff',
-    textAlignVertical: 'top',
+  },
+  disabledInput: {
+    backgroundColor: '#f2f2f2',
   },
   button: {
     backgroundColor: '#007bff',

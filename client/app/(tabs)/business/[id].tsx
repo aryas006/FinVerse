@@ -15,6 +15,7 @@ import {
     Pressable,
     Animated,
     TextInput,
+    Linking,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { useNavigation } from '@react-navigation/native';
@@ -48,6 +49,7 @@ interface Startup {
     mav: string;
     team: TeamMember[];
     job: JobPosting[];
+    email: string;
 
 }
 
@@ -65,6 +67,8 @@ export default function Business() {
     const [inputEquity, setInputEquity] = useState('');
     const [balance, setBalance] = useState(0);
 
+    const [email, setEmail] = useState('');
+
     const [descriptionText, setDescriptionText] = useState('');
     const [fundingAmount, setFundingAmount] = useState(0);
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -77,14 +81,17 @@ export default function Business() {
             const { data, error } = await supabase
                 .from('startups')
                 .select(
-                    'id, name, description, logo, backdrop, location, followers, mission, team, jobs'
+                    'id, name, description, logo, backdrop, location, followers, mission, team, jobs, email'
                 )
                 .eq('id', startupId)
                 .single();
-
+            console.log('Data:', data?.email);
+            setEmail(data?.email);
+            console.log(email);
             if (error) {
                 console.error('Error fetching startup:', error);
                 Alert.alert('Error', 'Failed to load startup data.');
+
                 return;
             }
 
@@ -98,6 +105,7 @@ export default function Business() {
                 location: data.location,
                 followers: data.followers,
                 mav: data.mission,
+                email: data?.email,
                 team: data.team.map((member: any) => ({
                     id: member.id,
                     name: member.name,
@@ -182,6 +190,32 @@ export default function Business() {
 
     const [isModalVisible, setModalVisible] = useState(false);
 
+    const handleContact = () => {
+        // Make sure email is passed as a parameter or initialized
+        if (!email) {
+            Alert.alert('Error', 'No email address provided');
+            return;
+        }
+
+        const subject = 'Hello';
+        const body = 'I hope you are doing well.';
+
+        console.log('The email is:', email);
+
+        // Constructing the mailto link
+        const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        // Check if the device can handle the mailto link
+        Linking.canOpenURL(url)
+            .then(supported => {
+                if (supported) {
+                    Linking.openURL(url); // Open the email client
+                } else {
+                    Alert.alert('Error', 'Email client is not available');
+                }
+            })
+            .catch(err => console.error('An error occurred', err));
+    };
 
     const handleShare = async () => {
         try {
@@ -197,41 +231,41 @@ export default function Business() {
             Alert.alert('Error', 'Invalid startup ID.');
             return;
         }
-    
+
         try {
             const authToken = await AsyncStorage.getItem('authToken');
             if (!authToken) {
                 Alert.alert('Error', 'User not authenticated.');
                 return;
             }
-    
+
             // Fetch current followers
             const { data, error: fetchError } = await supabase
                 .from('startups')
                 .select('follower, followers')
                 .eq('id', startupId)
                 .single();
-    
+
             if (fetchError || !data) {
                 console.error('Error fetching followers:', fetchError);
                 Alert.alert('Error', 'Unable to fetch followers.');
                 return;
             }
-    
+
             console.log('Current Follower List:', data.follower);
             console.log('Current Followers Count:', data.followers);
-    
+
             // Check if the user already follows the startup
             let updatedFollowerList = data.follower || [];
             if (updatedFollowerList.includes(authToken)) {
                 Alert.alert('Info', 'You are already following this startup.');
                 return;
             }
-    
+
             // Update the follower list and followers count
             updatedFollowerList.push(authToken);
             const updatedFollowerCount = (data.followers || 0) + 1;
-    
+
             const { error: updateError } = await supabase
                 .from('startups')
                 .update({
@@ -239,20 +273,20 @@ export default function Business() {
                     followers: updatedFollowerCount,
                 })
                 .eq('id', startupId);
-    
+
             if (updateError) {
                 console.error('Error updating followers:', updateError.message);
                 Alert.alert('Error', 'Unable to follow the startup.');
                 return;
             }
-    
+
             Alert.alert('Success', 'You are now following this startup!');
         } catch (error) {
             console.error('Unexpected error in handleFollow:', error);
             Alert.alert('Error', 'An unexpected error occurred.');
         }
     };
-    
+
 
 
 
@@ -407,7 +441,9 @@ export default function Business() {
                             />
                             <Text style={styles.actionText}>Fund</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionButton}>
+                        <TouchableOpacity style={styles.actionButton}
+                            onPress={handleContact}
+                        >
                             <Image
                                 source={require("../../../assets/images/mail_icon.png")}
                                 style={styles.menuIcon}

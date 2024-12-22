@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Animated, Platform } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Animated, Platform, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from 'react-native';
+import logo from '../../assets/images/ailogo.png';
 
 interface NavItemProps {
   name: string;
@@ -107,16 +108,24 @@ const BottomNav = () => {
   ];
 
   return (
-    <View style={[styles.bottomNav]}>
-      {navItems.map((item) => (
-        <NavItem
-          key={item.screen}
-          {...item}
-          isActive={segments.includes(item.screen)}
-          onPress={() => handleNavigate(item.screen)}
-        />
-      ))}
-    </View>
+    <>
+      <TouchableOpacity style={styles.logoContainer} onPress={() => { router.push('/(tabs)/AIMatchMaking') }} >
+        <View >
+          <Image source={logo} style={styles.logo} />
+        </View>
+      </TouchableOpacity>
+
+      <View style={[styles.bottomNav]}>
+        {navItems.map((item) => (
+          <NavItem
+            key={item.screen}
+            {...item}
+            isActive={segments.includes(item.screen)}
+            onPress={() => handleNavigate(item.screen)}
+          />
+        ))}
+      </View>
+    </>
   );
 };
 
@@ -128,7 +137,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingTop: 12,
     paddingHorizontal: 16,
-
+    paddingBottom: 20,  // Added padding at the bottom
     bottom: 0,
     width: '100%',
     borderTopLeftRadius: 20,
@@ -155,6 +164,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     fontWeight: '600',
+  },
+  logoContainer: {
+    position: 'absolute',
+    right: 16,
+    bottom: 120, // Adjust the bottom value as needed
+    zIndex: 999, // Ensure it's above the bottom navigation
+  },
+  logo: {
+    width: 60,  // Adjust width and height according to your logo size
+    height: 60,
+    resizeMode: 'contain',
   },
 });
 

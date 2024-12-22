@@ -273,7 +273,7 @@ const FundingHub = () => {
         <View style={styles.startupContainer}>
 
             <View>
-                <Image source={{ uri: item.image }} style={styles.startupImage} />
+                <Image source={{ uri: item.logo }} style={styles.startupImage} />
 
                 <View style={styles.upvoteContainer}>
                     <UpvoteButton
@@ -384,9 +384,9 @@ const FundingHub = () => {
     }, []);
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} >
 
-            <BlurView intensity={50} tint="light" style={styles.headerContainer}>
+            <BlurView intensity={50} tint="light" style={styles.headerContainer} >
                 <View>
                     <Text style={styles.header}>Funding Hub</Text>
                     <Text style={styles.headerDescription}>Discover innovative startups</Text>

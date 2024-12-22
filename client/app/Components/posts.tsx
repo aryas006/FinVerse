@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Button,
+  Share,
 } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { supabase } from '@/supabaseClient';
@@ -38,6 +39,8 @@ const PostItem: React.FC<PostItemProps> = ({
   comments,
   onLikeChange,
   onCommentChange,
+
+
 }) => {
   const [isHeartFilled, setIsHeartFilled] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -207,6 +210,28 @@ const PostItem: React.FC<PostItemProps> = ({
     setIsModalVisible(false);
   };
 
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message: 'Check out this post on FinVerse!',
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log(`Shared with activity type: ${result.activityType}`);
+        } else {
+          console.log('Shared successfully');
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log('Share dismissed');
+      }
+    } catch (error) {
+      // console.error('Error sharing:', error.message);
+    }
+  };
+
+
+
   return (
     <View style={styles.postContainer}>
       <Link
@@ -252,7 +277,7 @@ const PostItem: React.FC<PostItemProps> = ({
           />
           <Text style={styles.iconText}>{likes}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
           <Icon name="share-variant-outline" type="material-community" color="#657786" size={20} />
         </TouchableOpacity>
       </View>
@@ -280,7 +305,7 @@ const PostItem: React.FC<PostItemProps> = ({
           </View>
         </View>
       </Modal>
-    </View>
+    </View >
   );
 };
 
@@ -295,7 +320,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 20,
   },
   profileImage: {
     width: 48,
@@ -306,6 +331,7 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: 'column',
     flex: 1,
+
   },
   userName: {
     fontWeight: 'bold',
@@ -320,6 +346,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#14171A',
     marginBottom: 10,
+    marginTop: 12,
   },
   postImage: {
     width: '100%',

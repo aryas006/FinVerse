@@ -1,14 +1,19 @@
 import { StyleSheet, Text, View, FlatList, Image, Pressable, Animated, Modal, Button } from 'react-native';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { Link } from 'expo-router';
 import BottomNav from '../Components/BottomNav';
 import { BlurView } from 'expo-blur';
 import { Icon } from 'react-native-elements';
+import { supabase } from '@/supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type User = {
+    user_id: string;
+    wallet: number;
 
-
+};
 type StartupType = {
     id: string;
     name: string;
@@ -19,6 +24,7 @@ type StartupType = {
     industry: string;
     upvotes: number;
     isUpvoted: boolean;
+    createdDate: Date;
 };
 
 type RootStackParamList = {
@@ -30,82 +36,149 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 const FundingHub = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [balance, setBalance] = useState(1000); // Example starting balance
 
-    const handleAddFunds = () => {
-        setBalance(balance + 100); // Add $100 to the balance
-    };
 
-    const handleWithdrawFunds = () => {
-        if (balance >= 100) {
-            setBalance(balance - 100); // Subtract $100 from the balance
-        } else {
-            alert("Insufficient balance");
+    const [startups, setStartups] = useState<StartupType[]>([]); // Startups state
+    const [user, setUser] = useState<User | null>(null);
+    const [wallet, setWallet] = useState<number>(0);
+    const [moneyOnHold, setMoneyOnHold] = useState<number>(0);
+
+
+    const moneyOnHoldFunc = async () => {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select("money_onhold")
+            .eq('user_id', session.session.user.id)
+
+        if (error) {
+            console.error('Error fetching user:', error);
+            return;
+        }
+
+        if (data) {
+            console.log("money : ", data[0].money_onhold);
+            setMoneyOnHold(data[0].money_onhold);
+        }
+    }
+
+    const user_id = async () => {
+        const user_id = await AsyncStorage.getItem('authToken');
+        return user_id;
+    }
+
+    const fetchUser = async () => {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select("wallet")
+            .eq('user_id', session.session.user.id)
+
+
+        if (error) {
+            console.error('Error fetching user:', error);
+            return;
+        }
+
+        if (data) {
+            console.log(data[0].wallet);
+            setUser(data[0].wallet);
+            setWallet(data[0].wallet);
+
+
         }
     };
 
-    const [startups, setStartups] = useState([
-        {
-            id: '1',
-            name: 'Flutter',
-            description: 'Flutter Development Platform',
-            image: 'https://via.placeholder.com/100',
-            status: 'Seed Stage',
-            raised: '$2.5M',
-            industry: 'Developer Tools',
-            upvotes: 324,
-            isUpvoted: false,
-            createdDate: new Date('2023-12-01'),
-        },
-        {
-            id: '2',
-            name: 'Zerodha',
-            description: 'Modern Trading Platform',
-            image: 'https://via.placeholder.com/100',
-            status: 'Series A',
-            raised: '$15M',
-            industry: 'FinTech',
-            upvotes: 892,
-            isUpvoted: false,
-            createdDate: new Date('2023-11-15'),
-        },
-        {
-            id: '3',
-            name: 'Facebook',
-            description: 'Meta',
-            image: 'https://via.placeholder.com/100',
-            status: 'Seed Stage',
-            raised: '$15M',
-            industry: 'Social Media',
-            upvotes: 700,
-            isUpvoted: false,
-            createdDate: new Date('2024-10-10'),
-        },
-        {
-            id: '4',
-            name: 'Google',
-            description: 'Alphabet',
-            image: 'https://via.placeholder.com/100',
-            status: 'Series A',
-            raised: '$15M',
-            industry: 'Search Engines',
-            upvotes: 1024,
-            isUpvoted: false,
-            createdDate: new Date('2024-12-22'),
-        },
-        {
-            id: '5',
-            name: 'Amazon',
-            description: 'Amazon',
-            image: 'https://via.placeholder.com/100',
-            status: 'Seed Stage',
-            raised: '$15M',
-            industry: 'E-commerce',
-            upvotes: 950,
-            isUpvoted: false,
-            createdDate: new Date('2023-08-20'),
+    useEffect(() => {
+        const fetchStartups = async () => {
+            const { data, error } = await supabase
+                .from('startups') // Your Supabase table name
+                .select('*');
+
+            if (error) {
+                console.error(error);
+            } else {
+                setStartups(data);
+            }
+        };
+        const moneyonhold = async () => {
+            const { data: session } = await supabase.auth.getSession();
+            if (!session?.session?.user?.id) return;
+
+            const { data, error } = await supabase
+                .from('profiles')
+                .select("money_onhold")
+                .eq('user_id', session.session.user.id)
+
+            if (error) {
+                console.error('Error fetching user:', error);
+                return;
+            }
+
+            if (data) {
+                console.log("Money", data[0].money_onhold);
+                setMoneyOnHold(data[0].money_onhold);
+            }
         }
-    ]);
+        fetchStartups();
+        fetchUser();
+        moneyonhold();
+    }, []);
+
+
+
+    const handleAddFunds = async () => {
+        if (!user) return;
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const newBalance = wallet + 100;
+        const { error } = await supabase
+            .from('profiles')
+            .update({ wallet: newBalance })
+            .eq('user_id', session.session.user.id);
+
+        if (error) {
+            console.error('Error adding funds:', error);
+            return;
+        }
+
+        // Fetch updated user data
+        fetchUser();
+    };
+
+    const handleWithdrawFunds = async () => {
+        if (!user) return;
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+        if (user) {
+            if (wallet >= 100) {
+                const newBalance = 0;
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ wallet: newBalance })
+                    .eq('user_id', session.session.user.id);
+
+                if (error) {
+                    console.error(error);
+                } else {
+                    // setUser(data); // Update the user state with the new balance
+                }
+            } else {
+                alert("Insufficient balance");
+            }
+        }
+        fetchUser();
+    };
+
+
+
+
+
 
 
     const handleUpvote = (id: string) => {
@@ -197,7 +270,6 @@ const FundingHub = () => {
     };
     const navigation = useNavigation();
     const renderStartup = ({ item }: { item: any }) => (
-
         <View style={styles.startupContainer}>
 
             <View>
@@ -218,7 +290,7 @@ const FundingHub = () => {
                     <Link href={{
                         pathname: '/business/[id]',
                         params: {
-                            id: item,
+                            id: item.id,
                             image: item.image,
                             name: item.name,
                             description: item.description,
@@ -307,7 +379,9 @@ const FundingHub = () => {
         return filtered.sort((a, b) => b.upvotes - a.upvotes);
     };
 
-
+    useEffect(() => {
+        fetchUser();
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -334,14 +408,24 @@ const FundingHub = () => {
                     <BlurView intensity={90} tint='dark' style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>Wallet</Text>
                         <Text style={styles.modalBalance}>Current Balance</Text>
-                        <Text style={{ fontSize: 40, fontWeight: 500, color: 'white' }}> Rs.{balance}</Text>
+                        <Text style={{ fontSize: 40, fontWeight: 500, color: 'white' }}> Rs.{wallet}</Text>
 
                         <View style={styles.modalButtonContainer}>
-                            <View style={{ backgroundColor: 'black', borderRadius: 5, width: '50%' }}>
+                            <View style={{ backgroundColor: 'black', borderRadius: 5, width: '100%' }}>
                                 <Button title="Add Funds" onPress={handleAddFunds} />
                             </View>
-                            <View style={{ backgroundColor: 'black', borderRadius: 5, width: '50%' }}>
+                            <View style={{ backgroundColor: 'black', borderRadius: 5, width: '100%' }}>
                                 <Button title="Withdraw Funds" onPress={handleWithdrawFunds} />
+                            </View>
+                            <View style={{
+                                justifyContent: 'flex-start',
+                                alignItems: 'flex-start',
+                                width: '100%',
+                                marginTop: 20,
+                                gap: 10
+                            }}>
+                                <Text style={{ color: 'grey' }}>Money on hold:</Text>
+                                <Text style={{ fontSize: 40, fontWeight: 500, color: 'white' }}>Rs.{moneyOnHold}</Text>
                             </View>
                         </View>
 
@@ -571,9 +655,10 @@ const styles = StyleSheet.create({
     modalBalance: {
         fontSize: 18,
         marginBottom: 24,
+        color: 'grey',
     },
     modalButtonContainer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',

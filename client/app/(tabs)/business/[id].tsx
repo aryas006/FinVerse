@@ -62,12 +62,12 @@ export default function Business() {
     const [fundingType, setFundingType] = useState<'money' | 'equity'>('money');
     const [inputAmount, setInputAmount] = useState('');
     const [inputEquity, setInputEquity] = useState('');
+    const [balance, setBalance] = useState(0);
+
     const [descriptionText, setDescriptionText] = useState('');
     const [fundingAmount, setFundingAmount] = useState(0);
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
-
-
     const fetchStartupById = async (startupId: string | undefined) => {
         try {
             if (!startupId) return;
@@ -118,6 +118,45 @@ export default function Business() {
             setLoading(false);
         }
     };
+
+    const fetchBalance = async () => {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('wallet')
+            .eq('user_id', session.session.user.id)
+            .single();
+        if (error) {
+            console.error('Error fetching balance:', error.message);
+        } else {
+            console.log('Balance fetched successfully:', data.wallet);
+            setBalance(data.wallet);
+        }
+    }
+
+    const fundTransfer = async () => {
+        console.log('Funding:', fundingAmount);
+        console.log('Balance:', balance - fundingAmount);
+
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ wallet: balance - fundingAmount, money_onhold: fundingAmount })
+            .eq('user_id', session.session.user.id);
+
+
+        if (error) {
+            console.error('Error inserting funding:', error.message);
+        } else {
+            console.log('Funding inserted successfully:', data);
+            alert('Funding successful!');
+            setShowFundingModal(false);
+        }
+    };
     const confirmFunding = () => {
         const amount = parseFloat(inputAmount);
         if (isNaN(amount) || amount <= 0) return;
@@ -137,6 +176,7 @@ export default function Business() {
 
     useEffect(() => {
         fetchStartupById(id as string);
+        fetchBalance();
     }, [id]);
 
     const [isModalVisible, setModalVisible] = useState(false);
@@ -229,8 +269,8 @@ export default function Business() {
                             </Text>
                             <TextInput
                                 style={styles.amountInput}
-                                value={inputAmount}
-                                onChangeText={setInputAmount}
+                                value={fundingAmount}
+                                onChangeText={(text) => setFundingAmount(parseFloat(text))}
                                 keyboardType="decimal-pad"
                                 placeholder="Enter amount"
                                 placeholderTextColor="#808080"
@@ -246,7 +286,7 @@ export default function Business() {
                             multiline
                         />
 
-                        <Pressable style={styles.confirmButton} onPress={confirmFunding}>
+                        <Pressable style={styles.confirmButton} onPress={fundTransfer}>
                             <Text style={styles.confirmButtonText}>Confirm Funding Proposal</Text>
                         </Pressable>
 

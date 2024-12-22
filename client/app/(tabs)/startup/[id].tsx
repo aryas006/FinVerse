@@ -15,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { supabase } from '@/supabaseClient';
+
 
 
 
@@ -58,19 +60,44 @@ export default function DetailsScreen() {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [balance, setBalance] = useState(1000); // Example starting balance
+    const [balance, setBalance] = useState(0); // Example starting balance
 
-    const handleAddFunds = () => {
-        setBalance(balance + 100); // Add $100 to the balance
-    };
 
-    const handleWithdrawFunds = () => {
-        if (balance >= 100) {
-            setBalance(balance - 100); // Subtract $100 from the balance
+    const fetchWallet = async () => {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('wallet')
+            .eq('id', session.session.user.id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching wallet:', error.message);
         } else {
-            alert("Insufficient balance");
+            console.log('Wallet fetched successfully:', data);
+            setBalance(data?.wallet);
+        }
+    }
+
+
+    const fundTransfer = async () => {
+
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session?.user?.id) return;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ wallet: balance - fundingAmount, money_onhold: balance + fundingAmount })
+            .eq('user_id', session.session.user.id);
+        if (error) {
+            console.error('Error inserting funding:', error.message);
+        } else {
+            console.log('Funding inserted successfully:', data);
         }
     };
+
 
     const imageScale = scrollY.interpolate({
         inputRange: [-100, 0],
@@ -294,9 +321,6 @@ export default function DetailsScreen() {
                     </View>
                 </BlurView>
             </Modal>
-
-
-
             <Pressable
                 style={styles.fundButton}
                 onPress={handleFunding}

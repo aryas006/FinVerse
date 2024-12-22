@@ -149,15 +149,16 @@ const CreatePostOrEvent = () => {
               {!expanded ? (
                 <View style={styles.iconContainer}>
                   <TouchableOpacity
-                    style={[styles.iconButton, styles.largeButton, { backgroundColor: 'rgba(255, 255, 255, 0.5)' }]}
-                    onPress={() => {
-                      setIsEvent(false);
-                      pickImage();
-                    }}
-                  >
-                    <Text style={[styles.plusSign, { color: 'green' }]}>+</Text>
-                    <Text style={styles.iconText}>Add Post</Text>
-                  </TouchableOpacity>
+                        style={[styles.iconButton, styles.largeButton, { backgroundColor: 'rgba(255, 255, 255, 0.5)' }]}
+                        onPress={() => {
+                          setIsEvent(false);
+                          pickImage();
+                          router.push('/Feed/testing'); // Navigate to the desired route
+                        }}
+                      >
+                        <Text style={[styles.plusSign, { color: 'green' }]}>+</Text>
+                        <Text style={styles.iconText}>Add Post</Text>
+                      </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.iconButton, styles.largeButton, { backgroundColor: 'rgba(255, 255, 255, 0.5)' }]}
                     onPress={() => {
